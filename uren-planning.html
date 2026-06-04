@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Uren Planning — Thuisaccu Winkel</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;background:#f8f8f6;color:#1a1a1a;min-height:100vh}
+header{background:#fff;border-bottom:1px solid #e5e5e0;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+header h1{font-size:16px;font-weight:500}
+header span{font-size:12px;color:#888}
+.container{max-width:1100px;margin:0 auto;padding:24px}
+.tabs{display:flex;gap:2px;margin-bottom:24px;background:#fff;border:1px solid #e5e5e0;border-radius:10px;padding:4px;width:fit-content}
+.tab{padding:7px 16px;cursor:pointer;border:none;background:none;font-size:13px;color:#666;border-radius:7px;display:inline-flex;align-items:center;gap:6px;transition:background 0.15s}
+.tab.active{background:#1a1a1a;color:#fff;font-weight:500}
+.tab:not(.active):hover{background:#f0f0ee}
+.view{display:none}.view.active{display:block}
+.card{background:#fff;border:1px solid #e5e5e0;border-radius:10px;padding:20px;margin-bottom:16px}
+.toolbar{display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
+.btn{font-size:13px;padding:7px 14px;border:1px solid #e0e0dc;border-radius:7px;background:#fff;color:#1a1a1a;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:background 0.15s}
+.btn:hover{background:#f5f5f3}
+.btn-primary{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
+.btn-primary:hover{background:#333}
+table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
+th{text-align:left;padding:9px 12px;background:#f8f8f6;color:#666;font-weight:500;border-bottom:1px solid #e5e5e0;font-size:12px;text-transform:uppercase;letter-spacing:0.03em}
+td{padding:8px 12px;border-bottom:1px solid #f0f0ee;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fafaf8}
+td input[type=text],td input[type=number],td select{width:100%;border:1px solid #e0e0dc;border-radius:5px;padding:5px 8px;font-size:12px;background:#fff;color:#1a1a1a;font-family:inherit;outline:none}
+td input:focus,td select:focus{border-color:#1a1a1a}
+.badge{display:inline-block;font-size:11px;padding:2px 9px;border-radius:20px;font-weight:500}
+.badge-inst{background:#dbeafe;color:#1e40af}
+.badge-kant{background:#dcfce7;color:#166534}
+tfoot td{font-weight:500;background:#f8f8f6;font-size:13px}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px}
+.stat{background:#f8f8f6;border-radius:8px;padding:14px 16px}
+.stat-label{font-size:12px;color:#888;margin-bottom:4px}
+.stat-value{font-size:22px;font-weight:500}
+.nav-row{display:flex;gap:8px;align-items:center}
+.period-label{font-size:14px;font-weight:500;min-width:180px;text-align:center}
+.toast{position:fixed;bottom:24px;right:24px;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:500;opacity:0;transition:opacity 0.2s;pointer-events:none;z-index:100}
+.toast.ok{background:#166534;color:#fff}
+.toast.err{background:#991b1b;color:#fff}
+.toast.show{opacity:1}
+.empty{color:#999;text-align:center;padding:2rem;font-size:13px}
+.loading{color:#999;text-align:center;padding:2rem;font-size:13px}
+</style>
+</head>
+<body>
+
+<header>
+  <h1><i class="ti ti-clock" style="font-size:18px;vertical-align:-3px;margin-right:6px"></i>Uren Planning</h1>
+  <span>Thuisaccu Winkel</span>
+</header>
+
+<div class="container">
+
+<div class="tabs">
+  <button class="tab active" onclick="showView('dag')"><i class="ti ti-calendar"></i> Dag</button>
+  <button class="tab" onclick="showView('week')"><i class="ti ti-calendar-week"></i> Week</button>
+  <button class="tab" onclick="showView('maand')"><i class="ti ti-calendar-month"></i> Maand</button>
+  <button class="tab" onclick="showView('jaar')"><i class="ti ti-chart-bar"></i> Jaar</button>
+  <button class="tab" onclick="showView('medewerkers')"><i class="ti ti-users"></i> Medewerkers</button>
+</div>
+
+<!-- DAG -->
+<div id="view-dag" class="view active">
+  <div class="card">
+    <div class="toolbar">
+      <div class="nav-row">
+        <button class="btn" onclick="changeDay(-1)"><i class="ti ti-chevron-left"></i></button>
+        <span class="period-label" id="dag-label">-</span>
+        <button class="btn" onclick="changeDay(1)"><i class="ti ti-chevron-right"></i></button>
+      </div>
+      <button class="btn" onclick="goToday()"><i class="ti ti-calendar-event"></i> Vandaag</button>
+      <button class="btn" onclick="addDagRij()"><i class="ti ti-plus"></i> Rij toevoegen</button>
+      <button class="btn" onclick="exportCSV('dag')"><i class="ti ti-download"></i> Exporteren</button>
+    </div>
+    <div id="dag-content"><div class="loading">Laden...</div></div>
+  </div>
+</div>
+
+<!-- WEEK -->
+<div id="view-week" class="view">
+  <div class="card">
+    <div class="toolbar">
+      <div class="nav-row">
+        <button class="btn" onclick="changeWeek(-1)"><i class="ti ti-chevron-left"></i></button>
+        <span class="period-label" id="week-label">-</span>
+        <button class="btn" onclick="changeWeek(1)"><i class="ti ti-chevron-right"></i></button>
+      </div>
+      <button class="btn" onclick="exportCSV('week')"><i class="ti ti-download"></i> Exporteren</button>
+    </div>
+    <div id="week-content"></div>
+  </div>
+</div>
+
+<!-- MAAND -->
+<div id="view-maand" class="view">
+  <div class="card">
+    <div class="toolbar">
+      <div class="nav-row">
+        <button class="btn" onclick="changeMonth(-1)"><i class="ti ti-chevron-left"></i></button>
+        <span class="period-label" id="maand-label">-</span>
+        <button class="btn" onclick="changeMonth(1)"><i class="ti ti-chevron-right"></i></button>
+      </div>
+      <button class="btn" onclick="exportCSV('maand')"><i class="ti ti-download"></i> Exporteren</button>
+    </div>
+    <div id="maand-content"></div>
+  </div>
+</div>
+
+<!-- JAAR -->
+<div id="view-jaar" class="view">
+  <div class="card">
+    <div class="toolbar">
+      <div class="nav-row">
+        <button class="btn" onclick="changeYear(-1)"><i class="ti ti-chevron-left"></i></button>
+        <span class="period-label" id="jaar-label">-</span>
+        <button class="btn" onclick="changeYear(1)"><i class="ti ti-chevron-right"></i></button>
+      </div>
+      <button class="btn" onclick="exportCSV('jaar')"><i class="ti ti-download"></i> Exporteren</button>
+    </div>
+    <div id="jaar-content"></div>
+  </div>
+</div>
+
+<!-- MEDEWERKERS -->
+<div id="view-medewerkers" class="view">
+  <div class="card">
+    <div class="toolbar">
+      <button class="btn btn-primary" onclick="addMedewerker()"><i class="ti ti-plus"></i> Medewerker toevoegen</button>
+    </div>
+    <div id="mw-content"><div class="loading">Laden...</div></div>
+  </div>
+</div>
+
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+const SB_URL = 'https://geblhdcdqeseokbacnbl.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdlYmxoZGNkcWVzZW9rYmFjbmJsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5NjU0ODUsImV4cCI6MjA5NTU0MTQ4NX0.b5wnj4JhYTxIm5HC3qs4HG_dwAGzJugsggD8fyMHny8';
+const H = {'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY};
+const MAANDEN = ['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
+const DAGEN = ['zo','ma','di','wo','do','vr','za'];
+
+let currentDate = new Date();
+let weekOffset=0, monthOffset=0, yearOffset=0;
+let medewerkers=[], dagRows=[];
+
+function toast(msg,type='ok'){
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.className='toast '+type+' show';
+  setTimeout(()=>el.classList.remove('show'),2500);
+}
+
+async function sbGet(table,params=''){
+  const r=await fetch(`${SB_URL}/rest/v1/${table}?${params}`,{headers:{...H,'Prefer':'return=representation'}});
+  if(!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+async function sbPost(table,body){
+  const r=await fetch(`${SB_URL}/rest/v1/${table}`,{method:'POST',headers:{...H,'Prefer':'return=representation'},body:JSON.stringify(body)});
+  if(!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+async function sbPatch(table,id,body){
+  const r=await fetch(`${SB_URL}/rest/v1/${table}?id=eq.${id}`,{method:'PATCH',headers:{...H,'Prefer':'return=representation'},body:JSON.stringify(body)});
+  if(!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+async function sbDelete(table,id){
+  const r=await fetch(`${SB_URL}/rest/v1/${table}?id=eq.${id}`,{method:'DELETE',headers:H});
+  if(!r.ok) throw new Error(await r.text());
+}
+
+function dateKey(d){return d.toISOString().split('T')[0]}
+
+async function loadMedewerkers(){
+  try{medewerkers=await sbGet('mw_medewerkers','select=*&actief=eq.true&order=naam');}
+  catch(e){medewerkers=[];}
+}
+
+async function renderDag(){
+  const key=dateKey(currentDate);
+  const d=currentDate;
+  document.getElementById('dag-label').textContent=DAGEN[d.getDay()]+' '+d.getDate()+' '+MAANDEN[d.getMonth()]+' '+d.getFullYear();
+  document.getElementById('dag-content').innerHTML='<div class="loading">Laden...</div>';
+  try{dagRows=await sbGet('mw_uren',`select=*&datum=eq.${key}&order=created_at`);}
+  catch(e){dagRows=[];}
+  renderDagTable();
+}
+
+function renderDagTable(){
+  const totaal=dagRows.reduce((s,r)=>s+(parseFloat(r.uren)||0),0);
+  let html=`<table><thead><tr>
+    <th style="width:22%">Medewerker</th>
+    <th style="width:12%">Type</th>
+    <th style="width:9%">Uren</th>
+    <th style="width:28%">Taak / klus</th>
+    <th style="width:21%">Opmerking</th>
+    <th style="width:8%"></th>
+  </tr></thead><tbody>`;
+  if(!dagRows.length) html+=`<tr><td colspan="6" class="empty">Geen registraties — voeg een rij toe</td></tr>`;
+  dagRows.forEach((r,i)=>{
+    const opts=medewerkers.map(m=>`<option value="${m.id}" data-type="${m.type}" ${r.medewerker_id===m.id?'selected':''}>${m.naam}</option>`).join('');
+    html+=`<tr>
+      <td><select onchange="updateField(${i},'mw',this)">${opts}</select></td>
+      <td><span class="badge ${r.type==='installateur'?'badge-inst':'badge-kant'}" id="badge-${i}">${r.type||''}</span></td>
+      <td><input type="number" min="0" max="24" step="0.5" value="${r.uren||8}" onchange="updateField(${i},'uren',this)"></td>
+      <td><input type="text" value="${r.taak||''}" placeholder="Omschrijf taak/klus" onchange="updateField(${i},'taak',this)"></td>
+      <td><input type="text" value="${r.opmerking||''}" placeholder="Opmerking" onchange="updateField(${i},'opmerking',this)"></td>
+      <td><button class="btn" style="padding:5px 8px" onclick="deleteRij(${i})"><i class="ti ti-trash"></i></button></td>
+    </tr>`;
+  });
+  html+=`</tbody><tfoot><tr><td colspan="2" style="padding:8px 12px">Totaal</td><td style="padding:8px 12px">${totaal.toFixed(1)}</td><td colspan="3"></td></tr></tfoot></table>`;
+  document.getElementById('dag-content').innerHTML=html;
+}
+
+async function updateField(i,field,el){
+  const row=dagRows[i]; if(!row) return;
+  let patch={};
+  if(field==='mw'){
+    const opt=el.options[el.selectedIndex];
+    const type=opt.getAttribute('data-type');
+    patch={medewerker_id:el.value,medewerker_naam:opt.text,type};
+    dagRows[i]={...dagRows[i],...patch};
+    const badge=document.getElementById('badge-'+i);
+    if(badge){badge.textContent=type;badge.className='badge '+(type==='installateur'?'badge-inst':'badge-kant');}
+  } else if(field==='uren'){
+    patch={uren:parseFloat(el.value)||0};
+    dagRows[i].uren=patch.uren;
+    const tfoot=document.querySelector('#dag-content tfoot td:nth-child(2)');
+    if(tfoot) tfoot.textContent=dagRows.reduce((s,r)=>s+(parseFloat(r.uren)||0),0).toFixed(1);
+  } else {
+    patch={[field]:el.value};
+    dagRows[i][field]=el.value;
+  }
+  try{await sbPatch('mw_uren',row.id,patch);toast('Opgeslagen');}
+  catch(e){toast('Opslaan mislukt','err');}
+}
+
+async function addDagRij(){
+  if(!medewerkers.length){toast('Voeg eerst een medewerker toe','err');return;}
+  const mw=medewerkers[0];
+  try{
+    const res=await sbPost('mw_uren',{datum:dateKey(currentDate),medewerker_id:mw.id,medewerker_naam:mw.naam,type:mw.type,uren:8,taak:'',opmerking:''});
+    dagRows.push(res[0]); renderDagTable(); toast('Rij toegevoegd');
+  }catch(e){toast('Fout bij toevoegen','err');}
+}
+
+async function deleteRij(i){
+  const row=dagRows[i]; if(!row) return;
+  try{await sbDelete('mw_uren',row.id);dagRows.splice(i,1);renderDagTable();toast('Verwijderd');}
+  catch(e){toast('Verwijderen mislukt','err');}
+}
+
+function changeDay(d){currentDate=new Date(currentDate.getTime()+d*86400000);renderDag();}
+function goToday(){currentDate=new Date();renderDag();}
+
+function getWeekStart(offset){
+  const now=new Date();
+  const day=now.getDay()===0?6:now.getDay()-1;
+  return new Date(now.getTime()-day*86400000+offset*7*86400000);
+}
+
+async function renderWeek(){
+  const mon=getWeekStart(weekOffset);
+  const sun=new Date(mon.getTime()+6*86400000);
+  document.getElementById('week-label').textContent=`${mon.getDate()} ${MAANDEN[mon.getMonth()].slice(0,3)} – ${sun.getDate()} ${MAANDEN[sun.getMonth()].slice(0,3)} ${sun.getFullYear()}`;
+  document.getElementById('week-content').innerHTML='<div class="loading">Laden...</div>';
+  let rows=[];
+  try{rows=await sbGet('mw_uren',`select=*&datum=gte.${dateKey(mon)}&datum=lte.${dateKey(sun)}&order=datum,created_at`);}catch(e){}
+  const totaal=rows.reduce((s,r)=>s+(parseFloat(r.uren)||0),0);
+  const inst=rows.filter(r=>r.type==='installateur').reduce((s,r)=>s+(parseFloat(r.uren)||0),0);
+  const kant=rows.filter(r=>r.type==='kantoor').reduce((s,r)=>s+(parseFloat(r.uren)||0),0);
+  let html=`<div class="stat-grid">
+    <div class="stat"><div class="stat-label">Totaal uren</div><div class="stat-value">${totaal.toFixed(1)}</div></div>
+    <div class="stat"><div class="stat-label">Installateurs</div><div class="stat-value">${inst.toFixed(1)}</div></div>
+    <div class="stat"><div class="stat-label">Kantoor</div><div class="stat-value">${kant.toFixed(1)}</div></div>
+  </div><table><thead><tr><th style="width:14%">Datum</th><th style="width:22%">Medewerker</th><th style="width:13%">Type</th><th style="width:10%">Uren</th><th>Taak</th></tr></thead><tbody>`;
+  if(!rows.length) html+=`<tr><td colspan="5" class="empty">Geen registraties deze week</td></tr>`;
+  rows.forEach(r=>{
+    const d=new Date(r.datum+'T00:00:00');
+    html+=`<tr><td>${DAGEN[d.getDay()]} ${d.getDate()}/${d.getMonth()+1}</td><td>${r.medewerker_naam||'-'}</td><td><span class="badge ${r.type==='installateur'?'badge-inst':'badge-kant'}">${r.type||'-'}</span></td><td>${parseFloat(r.uren||0).toFixed(1)}</td><td>${r.taak||'-'}</td></tr>`;
+  });
+  html+=`</tbody><tfoot><tr><td colspan="3" style="padding:8px 12px">Totaal</td><td style="padding:8px 12px">${totaal.toFixed(1)}</td><td></td></tr></tfoot></table>`;
+  document.getElementById('week-content').innerHTML=html;
+}
+
+function changeWeek(d){weekOffset+=d;renderWeek();}
+
+async function renderMaand(){
+  const now=new Date();
+  const ref=new Date(now.getFullYear(),now.getMonth()+monthOffset,1);
+  const y=ref.getFullYear(),m=ref.getMonth();
+  document.getElementById('maand-label').textContent=MAANDEN[m]+' '+y;
+  document.getElementById('maand-content').innerHTML='<div class="loading">Laden...</div>';
+  const days=new Date(y,m+1,0).getDate();
+  const from=`${y}-${String(m+1).padStart(2,'0')}-01`;
+  const to=`${y}-${String(m+1).padStart(2,'0')}-${days}`;
+  let rows=[];
+  try{rows=await sbGet('mw_uren',`select=*&datum=gte.${from}&datum=lte.${to}&order=medewerker_naam`);}catch(e){}
+  const totaal=rows.reduce((s,r)=>s+(parseFloat(r.uren)||0),0);
+  const byMw={};
+  rows.forEach(r=>{const k=r.medewerker_naam||'Onbekend';if(!byMw[k])byMw[k]={naam:k,type:r.type,uren:0};byMw[k].uren+=parseFloat(r.uren)||0;});
+  const dagCount=new Set(rows.map(r=>r.datum)).size;
+  let html=`<div class="stat-grid">
+    <div class="stat"><div class="stat-label">Totaal uren</div><div class="stat-value">${totaal.toFixed(1)}</div></div>
+    <div class="stat"><div class="stat-label">Actieve dagen</div><div class="stat-value">${dagCount}</div></div>
+  </div><table><thead><tr><th>Medewerker</th><th style="width:18%">Type</th><th style="width:18%">Uren</th></tr></thead><tbody>`;
+  if(!Object.keys(byMw).length) html+=`<tr><td colspan="3" class="empty">Geen registraties deze maand</td></tr>`;
+  Object.values(byMw).forEach(m=>{html+=`<tr><td>${m.naam}</td><td><span class="badge ${m.type==='installateur'?'badge-inst':'badge-kant'}">${m.type}</span></td><td>${m.uren.toFixed(1)}</td></tr>`;});
+  html+=`</tbody><tfoot><tr><td colspan="2" style="padding:8px 12px">Totaal</td><td style="padding:8px 12px">${totaal.toFixed(1)}</td></tr></tfoot></table>`;
+  document.getElementById('maand-content').innerHTML=html;
+}
+
+function changeMonth(d){monthOffset+=d;renderMaand();}
+
+async function renderJaar(){
+  const y=new Date().getFullYear()+yearOffset;
+  document.getElementById('jaar-label').textContent=y;
+  document.getElementById('jaar-content').innerHTML='<div class="loading">Laden...</div>';
+  let rows=[];
+  try{rows=await sbGet('mw_uren',`select=datum,uren,type&datum=gte.${y}-01-01&datum=lte.${y}-12-31`);}catch(e){}
+  const byM=Array.from({length:12},(_,i)=>({label:MAANDEN[i],uren:0,inst:0,kant:0}));
+  rows.forEach(r=>{const m=new Date(r.datum+'T00:00:00').getMonth();byM[m].uren+=parseFloat(r.uren)||0;if(r.type==='installateur')byM[m].inst+=parseFloat(r.uren)||0;else byM[m].kant+=parseFloat(r.uren)||0;});
+  const totaal=byM.reduce((s,m)=>s+m.uren,0);
+  let html=`<div class="stat-grid"><div class="stat"><div class="stat-label">Totaal ${y}</div><div class="stat-value">${totaal.toFixed(1)}</div></div></div>`;
+  html+=`<table><thead><tr><th>Maand</th><th style="width:20%">Totaal</th><th style="width:20%">Installateurs</th><th style="width:20%">Kantoor</th></tr></thead><tbody>`;
+  byM.forEach(m=>{html+=`<tr><td>${m.label.charAt(0).toUpperCase()+m.label.slice(1)}</td><td>${m.uren.toFixed(1)}</td><td>${m.inst.toFixed(1)}</td><td>${m.kant.toFixed(1)}</td></tr>`;});
+  html+=`</tbody><tfoot><tr><td style="padding:8px 12px">Totaal</td><td style="padding:8px 12px">${totaal.toFixed(1)}</td><td></td><td></td></tr></tfoot></table>`;
+  document.getElementById('jaar-content').innerHTML=html;
+}
+
+function changeYear(d){yearOffset+=d;renderJaar();}
+
+async function renderMedewerkers(){
+  document.getElementById('mw-content').innerHTML='<div class="loading">Laden...</div>';
+  await loadMedewerkers();
+  let html=`<table><thead><tr><th>Naam</th><th style="width:20%">Type</th><th style="width:10%"></th></tr></thead><tbody>`;
+  if(!medewerkers.length) html+=`<tr><td colspan="3" class="empty">Nog geen medewerkers toegevoegd</td></tr>`;
+  medewerkers.forEach(m=>{html+=`<tr><td>${m.naam}</td><td><span class="badge ${m.type==='installateur'?'badge-inst':'badge-kant'}">${m.type}</span></td><td><button class="btn" style="padding:5px 8px" onclick="removeMedewerker('${m.id}')"><i class="ti ti-trash"></i></button></td></tr>`;});
+  html+=`</tbody></table>`;
+  document.getElementById('mw-content').innerHTML=html;
+}
+
+async function addMedewerker(){
+  const naam=prompt('Naam medewerker:');
+  if(!naam||!naam.trim()) return;
+  const type=confirm('Installateur?\n\nOK = installateur\nAnnuleren = kantoor')?'installateur':'kantoor';
+  try{await sbPost('mw_medewerkers',{naam:naam.trim(),type,actief:true});toast('Medewerker toegevoegd');renderMedewerkers();}
+  catch(e){toast('Fout bij toevoegen','err');}
+}
+
+async function removeMedewerker(id){
+  if(!confirm('Medewerker verwijderen?')) return;
+  try{await sbPatch('mw_medewerkers',id,{actief:false});toast('Medewerker verwijderd');renderMedewerkers();}
+  catch(e){toast('Fout bij verwijderen','err');}
+}
+
+async function exportCSV(view){
+  let rows=[],headers=[];
+  const now=new Date();
+  if(view==='dag'){
+    headers=['Datum','Medewerker','Type','Uren','Taak','Opmerking'];
+    rows=dagRows.map(r=>[r.datum,r.medewerker_naam,r.type,r.uren,r.taak,r.opmerking]);
+  } else if(view==='week'){
+    const mon=getWeekStart(weekOffset);
+    const sun=new Date(mon.getTime()+6*86400000);
+    headers=['Datum','Medewerker','Type','Uren','Taak','Opmerking'];
+    try{const d=await sbGet('mw_uren',`select=*&datum=gte.${dateKey(mon)}&datum=lte.${dateKey(sun)}&order=datum`);rows=d.map(r=>[r.datum,r.medewerker_naam,r.type,r.uren,r.taak,r.opmerking]);}catch(e){}
+  } else if(view==='maand'){
+    const ref=new Date(now.getFullYear(),now.getMonth()+monthOffset,1);
+    const y=ref.getFullYear(),m=ref.getMonth();
+    const days=new Date(y,m+1,0).getDate();
+    headers=['Datum','Medewerker','Type','Uren','Taak','Opmerking'];
+    try{const d=await sbGet('mw_uren',`select=*&datum=gte.${y}-${String(m+1).padStart(2,'0')}-01&datum=lte.${y}-${String(m+1).padStart(2,'0')}-${days}&order=datum`);rows=d.map(r=>[r.datum,r.medewerker_naam,r.type,r.uren,r.taak,r.opmerking]);}catch(e){}
+  } else if(view==='jaar'){
+    const y=now.getFullYear()+yearOffset;
+    headers=['Datum','Medewerker','Type','Uren','Taak','Opmerking'];
+    try{const d=await sbGet('mw_uren',`select=*&datum=gte.${y}-01-01&datum=lte.${y}-12-31&order=datum`);rows=d.map(r=>[r.datum,r.medewerker_naam,r.type,r.uren,r.taak,r.opmerking]);}catch(e){}
+  }
+  const csv=[headers,...rows].map(r=>r.map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=`uren_${view}.csv`;a.click();
+  URL.revokeObjectURL(url);
+}
+
+function showView(v){
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(el=>el.classList.remove('active'));
+  document.getElementById('view-'+v).classList.add('active');
+  const map={dag:'Dag',week:'Week',maand:'Maand',jaar:'Jaar',medewerkers:'Medewerkers'};
+  document.querySelectorAll('.tab').forEach(el=>{if(el.textContent.trim().startsWith(map[v]))el.classList.add('active');});
+  if(v==='dag') renderDag();
+  if(v==='week') renderWeek();
+  if(v==='maand') renderMaand();
+  if(v==='jaar') renderJaar();
+  if(v==='medewerkers') renderMedewerkers();
+}
+
+async function init(){await loadMedewerkers();renderDag();}
+init();
+</script>
+</body>
+</html>
