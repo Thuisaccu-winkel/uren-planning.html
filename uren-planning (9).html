@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Uren Planning — Thuisaccu Winkel</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;background:#f8f8f6;color:#1a1a1a;min-height:100vh}
+header{background:#fff;border-bottom:1px solid #e5e5e0;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+header h1{font-size:16px;font-weight:500;display:flex;align-items:center;gap:8px}
+header span{font-size:12px;color:#888}
+.container{max-width:1200px;margin:0 auto;padding:24px}
+.tabs{display:flex;gap:2px;margin-bottom:24px;background:#fff;border:1px solid #e5e5e0;border-radius:10px;padding:4px;width:fit-content;flex-wrap:wrap}
+.tab{padding:7px 14px;cursor:pointer;border:none;background:none;font-size:13px;color:#666;border-radius:7px;display:inline-flex;align-items:center;gap:6px;transition:background 0.15s;white-space:nowrap}
+.tab.active{background:#1a1a1a;color:#fff;font-weight:500}
+.tab:not(.active):hover{background:#f0f0ee}
+.view{display:none}.view.active{display:block}
+.card{background:#fff;border:1px solid #e5e5e0;border-radius:10px;padding:20px;margin-bottom:16px}
+.toolbar{display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
+.btn{font-size:13px;padding:7px 14px;border:1px solid #e0e0dc;border-radius:7px;background:#fff;color:#1a1a1a;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:background 0.15s}
+.btn:hover{background:#f5f5f3}
+.btn-primary{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
+.btn-primary:hover{background:#333}
+.btn-danger{background:#fff;color:#991b1b;border-color:#fca5a5}
+.btn-danger:hover{background:#fef2f2}
+table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
+th{text-align:left;padding:9px 12px;background:#f8f8f6;color:#666;font-weight:500;border-bottom:1px solid #e5e5e0;font-size:12px;text-transform:uppercase;letter-spacing:0.03em}
+td{padding:8px 12px;border-bottom:1px solid #f0f0ee;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fafaf8}
+td input[type=text],td input[type=number],td input[type=date],td select{width:100%;border:1px solid #e0e0dc;border-radius:5px;padding:5px 8px;font-size:12px;background:#fff;color:#1a1a1a;font-family:inherit;outline:none}
+td input:focus,td select:focus{border-color:#1a1a1a}
+.badge{display:inline-block;font-size:11px;padding:2px 9px;border-radius:20px;font-weight:500}
+.badge-inst{background:#dbeafe;color:#1e40af}
+.badge-kant{background:#dcfce7;color:#166534}
+.badge-beide{background:#fef3c7;color:#92400e}
+.badge-vakantie{background:#fce7f3;color:#9d174d}
+.badge-verlof{background:#ede9fe;color:#5b21b6}
+.badge-ziekte{background:#fee2e2;color:#991b1b}
+.badge-feestdag{background:#fff7ed;color:#c2410c}
+tfoot td{font-weight:500;background:#f8f8f6;font-size:13px;padding:8px 12px}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px}
+.stat{background:#f8f8f6;border-radius:8px;padding:14px 16px}
+.stat-label{font-size:12px;color:#888;margin-bottom:4px}
+.stat-value{font-size:22px;font-weight:500}
+.stat-sub{font-size:11px;color:#aaa;margin-top:2px}
+.nav-row{display:flex;gap:8px;align-items:center}
+.period-label{font-size:14px;font-weight:500;min-width:200px;text-align:center}
+.toast{position:fixed;bottom:24px;right:24px;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:500;opacity:0;transition:opacity 0.2s;pointer-events:none;z-index:100}
+.toast.ok{background:#166534;color:#fff}
+.toast.err{background:#991b1b;color:#fff}
+.toast.show{opacity:1}
+.empty{color:#999;text-align:center;padding:2rem;font-size:13px}
+.loading{color:#999;text-align:center;padding:2rem;font-size:13px}
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.chart-box{background:#fff;border:1px solid #e5e5e0;border-radius:10px;padding:20px}
+.chart-title{font-size:13px;font-weight:500;color:#666;margin-bottom:16px}
+canvas{max-height:220px}
+.mw-select-wrap{position:relative}
+.mw-dropdown{position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #e0e0dc;border-radius:6px;z-index:20;box-shadow:0 4px 12px rgba(0,0,0,0.08);max-height:180px;overflow-y:auto;display:none}
+.mw-dropdown.open{display:block}
+.mw-option{padding:7px 10px;cursor:pointer;font-size:12px;display:flex;align-items:center;gap:8px}
+.mw-option:hover{background:#f5f5f3}
+.mw-option input[type=checkbox]{margin:0;cursor:pointer}
+.mw-selected{display:flex;flex-wrap:wrap;gap:4px;min-height:28px;padding:3px 6px;border:1px solid #e0e0dc;border-radius:5px;cursor:pointer;align-items:center;background:#fff;font-size:12px}
+.mw-tag{background:#f0f0ee;border-radius:4px;padding:2px 6px;font-size:11px;display:inline-flex;align-items:center;gap:4px}
+.mw-tag-x{cursor:pointer;color:#999;font-size:13px;line-height:1}
+.dash-period{display:flex;gap:4px;margin-bottom:20px}
+.dash-period button{padding:6px 14px;border:1px solid #e0e0dc;border-radius:6px;background:#fff;font-size:12px;cursor:pointer;color:#666}
+.dash-period button.active{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
+.sep-week td{border-top:2px solid #e0e0dc!important}
+.sep-kwartaal td{border-top:3px solid #666!important;background:#f0f0ee!important}
+.sep-header{font-weight:500;font-size:12px;color:#555;padding:8px 12px!important;background:#f0f0ee!important}
+.sep-week-header td{background:#f8f8f6!important;font-weight:500;font-size:11px;color:#999;padding:5px 12px!important}
+.filter-bar{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.filter-bar label{font-size:12px;color:#666;font-weight:500}
+.filter-bar select{font-size:13px;padding:6px 10px;border:1px solid #e0e0dc;border-radius:7px;background:#fff;color:#1a1a1a;min-width:160px}
+.mw-totals{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:16px}
+.mw-total-card{background:#f8f8f6;border-radius:8px;padding:12px 14px;border-left:3px solid #1a1a1a}
+.mw-total-name{font-size:12px;font-weight:500;margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mw-total-stats{display:flex;gap:12px}
+.mw-total-stat{font-size:11px;color:#666}
+.mw-total-stat span{font-size:15px;font-weight:500;color:#1a1a1a;display:block}
+.past-week td{opacity:0.45}
+.past-week td input,.past-week td select{background:#f5f5f3!important;color:#888!important}
+.past-week-banner{background:#f5f5f3;border:1px solid #e0e0dc;border-radius:7px;padding:7px 14px;font-size:12px;color:#999;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.dagnotitie-bar{background:#fffbeb;border:1px solid #fde68a;border-radius:7px;padding:8px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px}
+.dagnotitie-bar input{flex:1;border:none;background:transparent;font-size:13px;outline:none;color:#1a1a1a}
+.ontbrekende-bar{background:#fef2f2;border:1px solid #fca5a5;border-radius:7px;padding:7px 14px;font-size:12px;color:#991b1b;margin-bottom:12px;display:flex;align-items:center;gap:6px;cursor:pointer}
+.ontbrekende-bar:hover{background:#fee2e2}
+.reken-card{background:#fff;border:1px solid #e5e5e0;border-radius:10px;margin-bottom:12px;overflow:hidden}
+.reken-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:#f8f8f6;border-bottom:1px solid #e5e5e0}
+.reken-naam{font-weight:500;font-size:14px}
+.reken-body{padding:16px}
+.reken-row{display:flex;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap}
+.reken-row label{font-size:12px;color:#666;width:130px;flex-shrink:0}
+.reken-row input,.reken-row select{font-size:13px;padding:6px 10px;border:1px solid #e0e0dc;border-radius:6px;background:#fff;width:160px}
+.reken-result{background:#f8f8f6;border-radius:8px;padding:12px 14px;margin-top:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.reken-result-item .label{font-size:11px;color:#888;margin-bottom:3px}
+.reken-result-item .value{font-size:18px;font-weight:500}
+.reken-result-item .value.highlight{color:#166534}
+.reken-totaal-bar{background:#1a1a1a;color:#fff;border-radius:10px;padding:16px 20px;margin-bottom:16px;display:flex;gap:24px;flex-wrap:wrap;align-items:center}
+.reken-totaal-bar .item .label{font-size:11px;color:#aaa;margin-bottom:2px}
+.reken-totaal-bar .item .value{font-size:20px;font-weight:500}
+/* Planning */
+.planning-grid{display:grid;gap:0;overflow-x:auto}
+.planning-header{display:flex;background:#f8f8f6;border-bottom:1px solid #e5e5e0;font-size:11px;font-weight:500;color:#666;text-transform:uppercase}
+.planning-header-name{width:140px;min-width:140px;padding:8px 12px;border-right:1px solid #e5e5e0}
+.planning-header-day{flex:1;min-width:36px;text-align:center;padding:6px 2px;border-right:1px solid #f0f0ee}
+.planning-header-day.weekend{background:#f0f0ee;color:#aaa}
+.planning-header-day.today{background:#1a1a1a;color:#fff;border-radius:4px}
+.planning-row{display:flex;border-bottom:1px solid #f0f0ee;min-height:40px;align-items:stretch}
+.planning-row:hover{background:#fafaf8}
+.planning-name{width:140px;min-width:140px;padding:8px 12px;font-size:13px;font-weight:500;border-right:1px solid #e5e5e0;display:flex;align-items:center}
+.planning-cell{flex:1;min-width:36px;border-right:1px solid #f0f0ee;cursor:pointer;position:relative;display:flex;align-items:center;justify-content:center}
+.planning-cell:hover{background:#f0f0ee}
+.planning-cell.weekend{background:#fafaf8}
+.planning-cell.today{background:#eff6ff}
+.planning-block{position:absolute;left:1px;right:1px;top:4px;bottom:4px;border-radius:4px;font-size:10px;display:flex;align-items:center;justify-content:center;font-weight:500;cursor:pointer;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;padding:0 4px}
+.block-werk{background:#dbeafe;color:#1e40af}
+.block-vakantie{background:#fce7f3;color:#9d174d}
+.block-verlof{background:#ede9fe;color:#5b21b6}
+.block-ziekte{background:#fee2e2;color:#991b1b}
+.block-feestdag{background:#fff7ed;color:#c2410c}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:200;display:flex;align-items:center;justify-content:center}
+.modal{background:#fff;border-radius:12px;padding:24px;width:400px;max-width:90vw;box-shadow:0 20px 60px rgba(0,0,0,0.15)}
+.modal h3{font-size:16px;font-weight:500;margin-bottom:20px}
+.modal-row{margin-bottom:14px}
+.modal-row label{display:block;font-size:12px;color:#666;margin-bottom:5px;font-weight:500}
+.modal-row input,.modal-row select,.modal-row textarea{width:100%;border:1px solid #e0e0dc;border-radius:6px;padding:8px 10px;font-size:13px;font-family:inherit;outline:none}
+.modal-row textarea{height:70px;resize:none}
+.modal-row input:focus,.modal-row select:focus,.modal-row textarea:focus{border-color:#1a1a1a}
+.modal-btns{display:flex;gap:8px;justify-content:flex-end;margin-top:20px}
+.planning-legend{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.planning-legend-item{display:flex;align-items:center;gap:5px;font-size:12px;color:#666}
+.planning-legend-dot{width:12px;height:12px;border-radius:3px}
+@media(max-width:700px){.chart-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <h1><i class="ti ti-clock"></i> Uren Planning</h1>
+  <span>Thuisaccu Winkel</span>
+</header>
+<div class="container">
+
+<div class="filter-bar" id="global-filter">
+  <label><i class="ti ti-filter" style="font-size:13px"></i> Filter:</label>
+  <select id="filter-mw-select" onchange="setMwFilter(this.value)">
+    <option value="">Alle medewerkers</option>
+  </select>
+  <span id="filter-indicator" style="font-size:12px;color:#999;display:none">Gefilterd: <strong id="filter-naam"></strong></span>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="showView('dag')"><i class="ti ti-calendar"></i> Dag</button>
+  <button class="tab" onclick="showView('week')"><i class="ti ti-calendar-week"></i> Week</button>
+  <button class="tab" onclick="showView('maand')"><i class="ti ti-calendar-month"></i> Maand</button>
+  <button class="tab" onclick="showView('jaar')"><i class="ti ti-chart-bar"></i> Jaar</button>
+  <button class="tab" onclick="showView('planning')"><i class="ti ti-layout-board"></i> Planning</button>
+  <button class="tab" onclick="showView('dashboard')"><i class="ti ti-layout-dashboard"></i> Dashboard</button>
+  <button class="tab" onclick="showView('rekentool')"><i class="ti ti-calculator"></i> Rekentool</button>
+  <button class="tab" onclick="showView('medewerkers')"><i class="ti ti-users"></i> Medewerkers</button>
+</div>
+
+<!-- DAG -->
+<div id="view-dag" class="view active">
+  <div class="card">
+    <div class="toolbar">
+      <div class="nav-row">
+        <button class="btn" onclick="changeDay(-1)"><i class="ti ti-chevron-left"></i></button>
+        <span class="period-label" id="dag-label">-</span>
+        <button class="btn" onclick="changeDay(1)"><i class="ti ti-chevron-right"></i></button>
+      </div>
+      <button class="btn" onclick="goToday()"><i class="ti ti-calendar-event"></i> Vandaag</button>
+      <button class="btn" onclick="addDagRij()"><i class="ti ti-plus"></i> Rij toevoegen</button>
+      <button class="btn" onclick="exportCSV('dag')"><i class="ti ti-download"></i> Exporteren</button>
+    </div>
+    <div id="dag-content"><div class="loading">Laden...</div></div>
+  </div>
+</div>
+
+<!-- WEEK -->
+<div id="view-week" class="view">
+  <div class="card">
+    <div class="toolbar">
+      <div class="nav-row">
+        <button class="btn" onclick="changeWeek(-1)"><i class="ti ti-chevron-left"></i></button>
+        <span class="period-label" id="week-label">-</span>
+        <button class="btn" onclick="changeWeek(1)"><i class="ti ti-chevron-right"></i></button>
+      </div>
+      <button class="btn" onclick="exportCSV('week')"><i class="ti ti-download"></i> Exporteren</button>
+    </div>
+    <div id="week-content"></div>
+  </div>
+</div>
+
+<!-- MAAND -->
+<div id="view-maand" class="view">
+  <div class="card">
+    <div class="toolbar">
+      <div class="nav-row">
+        <button class="btn" onclick="changeMonth(-1)"><i class="ti ti-chevron-left"></i></button>
+        <span class="period-label" id="maand-label">-</span>
+        <button class="btn" onclick="changeMonth(1)"><i class="ti ti-chevron-right"></i></button>
+      </div>
+      <button class="btn" onclick="exportCSV('maand')"><i class="ti ti-download"></i> Exporteren</button>
+    </div>
+    <div id="maand-content"></div>
+  </div>
+</div>
+
+<!-- JAAR -->
+<div id="view-jaar" class="view">
+  <div class="card">
+    <div class="toolbar">
+      <div class="nav-row">
+        <button class="btn" onclick="changeYear(-1)"><i class="ti ti-chevron-left"></i></button>
+        <span class="period-label" id="jaar-label">-</span>
+        <button class="btn" onclick="changeYear(1)"><i class="ti ti-chevron-right"></i></button>
+      </div>
+      <button class="btn" onclick="exportCSV('jaar')"><i class="ti ti-download"></i> Exporteren</button>
+    </div>
+    <div id="jaar-content"></div>
+  </div>
+</div>
+
+<!-- PLANNING -->
+<div id="view-planning" class="view">
+  <div class="card">
+    <div class="toolbar">
+      <div class="nav-row">
+        <button class="btn" onclick="changePlanningWeek(-1)"><i class="ti ti-chevron-left"></i></button>
+        <span class="period-label" id="planning-label">-</span>
+        <button class="btn" onclick="changePlanningWeek(1)"><i class="ti ti-chevron-right"></i></button>
+      </div>
+      <button class="btn" onclick="goTodayPlanning()"><i class="ti ti-calendar-event"></i> Vandaag</button>
+      <button class="btn btn-primary" onclick="openPlanningModal()"><i class="ti ti-plus"></i> Inplannen</button>
+    </div>
+    <div class="planning-legend">
+      <div class="planning-legend-item"><div class="planning-legend-dot block-werk"></div> Werk</div>
+      <div class="planning-legend-item"><div class="planning-legend-dot block-vakantie"></div> Vakantie</div>
+      <div class="planning-legend-item"><div class="planning-legend-dot block-verlof"></div> Verlof</div>
+      <div class="planning-legend-item"><div class="planning-legend-dot block-ziekte"></div> Ziekte</div>
+      <div class="planning-legend-item"><div class="planning-legend-dot block-feestdag"></div> Feestdag</div>
+    </div>
+    <div id="planning-content"><div class="loading">Laden...</div></div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="view-dashboard" class="view">
+  <div class="dash-period" id="dash-period-btns">
+    <button class="active" onclick="setDashPeriod('week',this)">Deze week</button>
+    <button onclick="setDashPeriod('maand',this)">Deze maand</button>
+    <button onclick="setDashPeriod('kwartaal',this)">Dit kwartaal</button>
+    <button onclick="setDashPeriod('jaar',this)">Dit jaar</button>
+  </div>
+  <div id="dash-stats" class="stat-grid"></div>
+  <div class="chart-grid">
+    <div class="chart-box"><div class="chart-title">Uren per dag</div><canvas id="chart-dag"></canvas></div>
+    <div class="chart-box"><div class="chart-title">Uren per medewerker</div><canvas id="chart-mw"></canvas></div>
+  </div>
+  <div class="chart-grid">
+    <div class="chart-box"><div class="chart-title">Installateurs vs kantoor</div><canvas id="chart-type"></canvas></div>
+    <div class="chart-box"><div class="chart-title">Uren per week</div><canvas id="chart-week"></canvas></div>
+  </div>
+</div>
+
+<!-- REKENTOOL -->
+<div id="view-rekentool" class="view">
+  <div class="card">
+    <div class="toolbar" style="justify-content:space-between;flex-wrap:wrap;gap:12px">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <div class="dash-period" id="reken-period-btns" style="margin:0">
+          <button class="active" onclick="setRekenPeriod('week',this)">Week</button>
+          <button onclick="setRekenPeriod('maand',this)">Maand</button>
+          <button onclick="setRekenPeriod('kwartaal',this)">Kwartaal</button>
+          <button onclick="setRekenPeriod('jaar',this)">Jaar</button>
+        </div>
+        <div class="nav-row">
+          <button class="btn" onclick="changeRekenPeriod(-1)"><i class="ti ti-chevron-left"></i></button>
+          <span class="period-label" id="reken-label" style="min-width:180px">-</span>
+          <button class="btn" onclick="changeRekenPeriod(1)"><i class="ti ti-chevron-right"></i></button>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn" onclick="exportRekenCSV()"><i class="ti ti-download"></i> CSV</button>
+        <button class="btn" onclick="exportRekenPDF()"><i class="ti ti-file-type-pdf"></i> PDF</button>
+      </div>
+    </div>
+  </div>
+  <div id="reken-content"><div class="loading">Laden...</div></div>
+</div>
+
+<!-- MEDEWERKERS -->
+<div id="view-medewerkers" class="view">
+  <div class="card">
+    <div class="toolbar">
+      <button class="btn btn-primary" onclick="addMedewerker()"><i class="ti ti-plus"></i> Medewerker toevoegen</button>
+    </div>
+    <div id="mw-content"><div class="loading">Laden...</div></div>
+  </div>
+</div>
+</div>
+
+<!-- PLANNING MODAL -->
+<div id="planning-modal" class="modal-overlay" style="display:none" onclick="closePlanningModal(event)">
+  <div class="modal">
+    <h3 id="modal-title">Inplannen</h3>
+    <div class="modal-row">
+      <label>Medewerker</label>
+      <select id="modal-mw"></select>
+    </div>
+    <div class="modal-row">
+      <label>Type</label>
+      <select id="modal-type">
+        <option value="werk">Werk</option>
+        <option value="vakantie">Vakantie</option>
+        <option value="verlof">Verlof</option>
+        <option value="ziekte">Ziekte</option>
+        <option value="feestdag">Feestdag</option>
+      </select>
+    </div>
+    <div class="modal-row">
+      <label>Van</label>
+      <input type="date" id="modal-van">
+    </div>
+    <div class="modal-row">
+      <label>Tot en met</label>
+      <input type="date" id="modal-tot">
+    </div>
+    <div class="modal-row">
+      <label>Omschrijving</label>
+      <textarea id="modal-omschrijving" placeholder="Optioneel..."></textarea>
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-danger" id="modal-delete-btn" style="display:none;margin-right:auto" onclick="deletePlanningItem()"><i class="ti ti-trash"></i> Verwijderen</button>
+      <button class="btn" onclick="closePlanningModal()">Annuleren</button>
+      <button class="btn btn-primary" onclick="savePlanningItem()"><i class="ti ti-check"></i> Opslaan</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+const SB_URL='https://geblhdcdqeseokbacnbl.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdlYmxoZGNkcWVzZW9rYmFjbmJsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5NjU0ODUsImV4cCI6MjA5NTU0MTQ4NX0.b5wnj4JhYTxIm5HC3qs4HG_dwAGzJugsggD8fyMHny8';
+const H={'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY};
+const MAANDEN=['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
+const DAGEN=['zo','ma','di','wo','do','vr','za'];
+const TYPES=['installateur','kantoor','beide'];
+const PLANNING_TYPES=['werk','vakantie','verlof','ziekte','feestdag'];
+
+let currentDate=new Date();
+let weekOffset=0,monthOffset=0,yearOffset=0,planningWeekOffset=0;
+let medewerkers=[],dagRows=[];
+let dashPeriod='week',rekenPeriod='week',rekenOffset=0;
+let charts={};
+let filterMwId='';
+let editingPlanningId=null;
+let dagNotities={};
+
+function toast(msg,type='ok'){const el=document.getElementById('toast');el.textContent=msg;el.className='toast '+type+' show';setTimeout(()=>el.classList.remove('show'),2500);}
+
+async function sbGet(table,params=''){const r=await fetch(`${SB_URL}/rest/v1/${table}?${params}`,{headers:{...H,'Prefer':'return=representation'}});if(!r.ok)throw new Error(await r.text());return r.json();}
+async function sbPost(table,body){const r=await fetch(`${SB_URL}/rest/v1/${table}`,{method:'POST',headers:{...H,'Prefer':'return=representation'},body:JSON.stringify(body)});if(!r.ok)throw new Error(await r.text());return r.json();}
+async function sbPatch(table,id,body){const r=await fetch(`${SB_URL}/rest/v1/${table}?id=eq.${id}`,{method:'PATCH',headers:{...H,'Prefer':'return=representation'},body:JSON.stringify(body)});if(!r.ok)throw new Error(await r.text());return r.json();}
+async function sbDelete(table,id){const r=await fetch(`${SB_URL}/rest/v1/${table}?id=eq.${id}`,{method:'DELETE',headers:H});if(!r.ok)throw new Error(await r.text());}
+
+function dateKey(d){return d.toISOString().split('T')[0]}
+function badgeClass(t){return t==='installateur'?'badge-inst':t==='kantoor'?'badge-kant':t==='vakantie'?'badge-vakantie':t==='verlof'?'badge-verlof':t==='ziekte'?'badge-ziekte':t==='feestdag'?'badge-feestdag':'badge-beide'}
+function getWeekNr(d){const dt=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));const day=dt.getUTCDay()||7;dt.setUTCDate(dt.getUTCDate()+4-day);const ys=new Date(Date.UTC(dt.getUTCFullYear(),0,1));return Math.ceil((((dt-ys)/86400000)+1)/7);}
+function getWeekKey(d){const day=d.getDay()===0?6:d.getDay()-1;return dateKey(new Date(d.getTime()-day*86400000));}
+function getKwartaal(m){return Math.floor(m/3)+1;}
+function isCurrentWeek(d){return getWeekKey(new Date())===getWeekKey(d);}
+
+async function loadMedewerkers(){
+  try{medewerkers=await sbGet('mw_medewerkers','select=*&actief=eq.true&order=naam');}
+  catch(e){medewerkers=[];}
+  const sel=document.getElementById('filter-mw-select');
+  if(sel){sel.innerHTML='<option value="">Alle medewerkers</option>';medewerkers.forEach(m=>{const o=document.createElement('option');o.value=m.id;o.textContent=m.naam;if(m.id===filterMwId)o.selected=true;sel.appendChild(o);});}
+}
+
+function setMwFilter(id){
+  filterMwId=id;
+  const mw=medewerkers.find(m=>m.id===id);
+  const ind=document.getElementById('filter-indicator');
+  const naam=document.getElementById('filter-naam');
+  if(id&&mw){ind.style.display='';naam.textContent=mw.naam;}else{ind.style.display='none';}
+  const active=document.querySelector('.view.active');if(!active)return;
+  const v=active.id.replace('view-','');
+  if(v==='dag')renderDag();if(v==='week')renderWeek();if(v==='maand')renderMaand();if(v==='jaar')renderJaar();if(v==='dashboard')renderDashboard();
+}
+
+function filterRows(rows){
+  if(!filterMwId)return rows;
+  return rows.filter(r=>{
+    const ids=r.medewerker_ids||[];
+    const mw=medewerkers.find(m=>m.id===filterMwId);
+    if(!mw)return false;
+    if(ids.includes(filterMwId))return true;
+    if(r.medewerker_naam===mw.naam)return true;
+    if(r.medewerker_namen&&r.medewerker_namen.includes(mw.naam))return true;
+    return false;
+  });
+}
+
+function formatNamen(r){if(r.medewerker_namen&&r.medewerker_namen.length)return r.medewerker_namen.join(', ');if(r.medewerker_naam)return r.medewerker_naam;return '-';}
+
+function buildMwSelector(rowId,selectedIds){
+  const selected=selectedIds||[];
+  const displayNames=medewerkers.filter(m=>selected.includes(m.id)).map(m=>m.naam);
+  const tagsHtml=displayNames.length?displayNames.map(n=>`<span class="mw-tag">${n}<span class="mw-tag-x" onclick="removeMwTag(event,'${rowId}','${medewerkers.find(m=>m.naam===n)?.id}')">×</span></span>`).join(''):'<span style="color:#aaa;font-size:12px">Selecteer...</span>';
+  const optionsHtml=medewerkers.map(m=>`<div class="mw-option" onclick="toggleMwOption(event,'${rowId}','${m.id}')"><input type="checkbox" ${selected.includes(m.id)?'checked':''} id="mwopt-${rowId}-${m.id}"><span>${m.naam}</span><span class="badge ${badgeClass(m.type)}" style="margin-left:auto">${m.type}</span></div>`).join('');
+  return `<div class="mw-select-wrap" id="mwwrap-${rowId}"><div class="mw-selected" onclick="toggleMwDropdown('${rowId}')">${tagsHtml}</div><div class="mw-dropdown" id="mwdd-${rowId}">${optionsHtml}</div></div>`;
+}
+
+function toggleMwDropdown(rowId){document.getElementById('mwdd-'+rowId)?.classList.toggle('open');}
+
+function toggleMwOption(e,rowId,mwId){
+  e.stopPropagation();
+  const cb=document.getElementById(`mwopt-${rowId}-${mwId}`);
+  if(e.target!==cb)cb.checked=!cb.checked;
+  const row=dagRows.find(r=>r.id===rowId);if(!row)return;
+  if(!row.medewerker_ids)row.medewerker_ids=[];
+  if(cb.checked){if(!row.medewerker_ids.includes(mwId))row.medewerker_ids.push(mwId);}
+  else{row.medewerker_ids=row.medewerker_ids.filter(id=>id!==mwId);}
+  row.medewerker_namen=medewerkers.filter(m=>row.medewerker_ids.includes(m.id)).map(m=>m.naam);
+  saveMwField(rowId,row.medewerker_ids,row.medewerker_namen);
+  refreshMwSelected(rowId,row.medewerker_ids);
+}
+
+function removeMwTag(e,rowId,mwId){
+  e.stopPropagation();
+  const row=dagRows.find(r=>r.id===rowId);if(!row)return;
+  row.medewerker_ids=(row.medewerker_ids||[]).filter(id=>id!==mwId);
+  row.medewerker_namen=medewerkers.filter(m=>row.medewerker_ids.includes(m.id)).map(m=>m.naam);
+  saveMwField(rowId,row.medewerker_ids,row.medewerker_namen);
+  refreshMwSelected(rowId,row.medewerker_ids);
+  const cb=document.getElementById(`mwopt-${rowId}-${mwId}`);if(cb)cb.checked=false;
+}
+
+function refreshMwSelected(rowId,selectedIds){
+  const wrap=document.querySelector(`#mwwrap-${rowId} .mw-selected`);if(!wrap)return;
+  const displayNames=medewerkers.filter(m=>selectedIds.includes(m.id)).map(m=>m.naam);
+  wrap.innerHTML=displayNames.length?displayNames.map(n=>`<span class="mw-tag">${n}<span class="mw-tag-x" onclick="removeMwTag(event,'${rowId}','${medewerkers.find(m=>m.naam===n)?.id}')">×</span></span>`).join(''):'<span style="color:#aaa;font-size:12px">Selecteer...</span>';
+}
+
+async function saveMwField(rowId,ids,namen){
+  try{await sbPatch('mw_uren',rowId,{medewerker_namen:namen});toast('Opgeslagen');}
+  catch(e){toast('Opslaan mislukt','err');}
+}
+
+document.addEventListener('click',e=>{document.querySelectorAll('.mw-dropdown.open').forEach(dd=>{if(!dd.parentElement.contains(e.target))dd.classList.remove('open');});});
+
+function buildTotalsBar(rows){
+  const byMw={};
+  rows.forEach(r=>{
+    const namen=r.medewerker_namen&&r.medewerker_namen.length?r.medewerker_namen:[r.medewerker_naam||'Onbekend'];
+    namen.forEach(n=>{if(!byMw[n])byMw[n]={naam:n,uren:0,dagen:new Set()};byMw[n].uren+=parseFloat(r.uren)||0;if(r.datum)byMw[n].dagen.add(r.datum);});
+  });
+  if(!Object.keys(byMw).length)return '';
+  return`<div class="mw-totals">${Object.values(byMw).sort((a,b)=>b.uren-a.uren).map(m=>`<div class="mw-total-card"><div class="mw-total-name">${m.naam}</div><div class="mw-total-stats"><div class="mw-total-stat"><span>${m.uren.toFixed(1)}</span>uren</div><div class="mw-total-stat"><span>${m.dagen.size}</span>dagen</div></div></div>`).join('')}</div>`;
+}
+
+// Check missing days in current week
+function getMissingDays(){
+  const now=new Date();
+  const day=now.getDay()===0?6:now.getDay()-1;
+  const mon=new Date(now.getTime()-day*86400000);
+  const missing=[];
+  for(let i=0;i<day;i++){
+    const d=new Date(mon.getTime()+i*86400000);
+    const k=dateKey(d);
+    const hasRows=dagRows.some(r=>r.datum===k)||(dagRows.length>0&&dateKey(currentDate)===k&&dagRows.length>0);
+    if(!hasRows)missing.push(d);
+  }
+  return missing;
+}
+
+// Dag notitie
+async function loadDagNotitie(key){
+  try{const r=await sbGet('mw_dagnotities',`select=*&datum=eq.${key}`);dagNotities[key]=r[0]?.notitie||'';}
+  catch(e){dagNotities[key]='';}
+}
+
+async function saveDagNotitie(key,val){
+  dagNotities[key]=val;
+  try{
+    const bestaand=await sbGet('mw_dagnotities',`select=*&datum=eq.${key}`);
+    if(bestaand.length>0)await sbPatch('mw_dagnotities',bestaand[0].id,{notitie:val});
+    else await sbPost('mw_dagnotities',{datum:key,notitie:val});
+  }catch(e){}
+}
+
+async function renderDag(){
+  const key=dateKey(currentDate);
+  const d=currentDate;
+  const isPast=!isCurrentWeek(currentDate);
+  const label=document.getElementById('dag-label');
+  label.textContent=DAGEN[d.getDay()]+' '+d.getDate()+' '+MAANDEN[d.getMonth()]+' '+d.getFullYear();
+  label.style.color=isPast?'#999':'';
+  document.getElementById('dag-content').innerHTML='<div class="loading">Laden...</div>';
+  try{dagRows=await sbGet('mw_uren',`select=*&datum=eq.${key}&order=created_at`);}catch(e){dagRows=[];}
+  dagRows.forEach(r=>{
+    if(!r.medewerker_ids)r.medewerker_ids=r.medewerker_id?[r.medewerker_id]:[];
+    if(!r.medewerker_namen)r.medewerker_namen=r.medewerker_naam?[r.medewerker_naam]:[];
+  });
+  await loadDagNotitie(key);
+  renderDagTable();
+}
+
+function renderDagTable(){
+  const isPast=!isCurrentWeek(currentDate);
+  const wknr=getWeekNr(currentDate);
+  const key=dateKey(currentDate);
+  const filteredDag=filterRows(dagRows);
+  const totaal=filteredDag.reduce((s,r)=>s+(parseFloat(r.uren)||0),0);
+
+  let html='';
+
+  // Banner voor afgesloten week
+  if(isPast) html+=`<div class="past-week-banner"><i class="ti ti-lock"></i> Afgesloten week ${wknr} — nog wel bewerkbaar</div>`;
+
+  // Ontbrekende dagen indicator (alleen huidige week)
+  if(isCurrentWeek(currentDate)){
+    const now=new Date();
+    const day=now.getDay()===0?6:now.getDay()-1;
+    const mon=new Date(now.getTime()-day*86400000);
+    // We check per week - simplified check
+  }
+
+  // Dagnotitie
+  const notitie=dagNotities[key]||'';
+  html+=`<div class="dagnotitie-bar"><i class="ti ti-note" style="color:#d97706;font-size:14px"></i><input type="text" placeholder="Notitie voor deze dag..." value="${notitie.replace(/"/g,'&quot;')}" onchange="saveDagNotitie('${key}',this.value)" style="flex:1;border:none;background:transparent;font-size:13px;outline:none"></div>`;
+
+  html+=buildTotalsBar(filteredDag);
+
+  html+=`<table><thead><tr>
+    <th style="width:11%">Datum</th>
+    <th style="width:25%">Medewerker(s)</th>
+    <th style="width:11%">Type</th>
+    <th style="width:8%">Uren</th>
+    <th style="width:23%">Taak / klus</th>
+    <th style="width:14%">Opmerking</th>
+    <th style="width:8%"></th>
+  </tr></thead><tbody>`;
+
+  if(!filteredDag.length) html+=`<tr><td colspan="7" class="empty">${isPast?'Geen registraties':'Geen registraties — voeg een rij toe'}</td></tr>`;
+
+  filteredDag.forEach(r=>{
+    const rtype=r.type||'installateur';
+    const typeOpts=TYPES.map(t=>`<option value="${t}" ${rtype===t?'selected':''}>${t}</option>`).join('');
+    const mwSel=buildMwSelector(r.id,r.medewerker_ids||[]);
+    html+=`<tr class="${isPast?'past-week':''}">
+      <td><input type="date" value="${r.datum||''}" onchange="updateSimpleField('${r.id}','datum',this.value)" style="font-size:11px;padding:4px 6px"></td>
+      <td>${mwSel}</td>
+      <td><select onchange="updateSimpleField('${r.id}','type',this.value)">${typeOpts}</select></td>
+      <td><input type="number" min="0" max="24" step="0.5" value="${r.uren||8}" onchange="updateSimpleField('${r.id}','uren',parseFloat(this.value)||0)"></td>
+      <td><input type="text" value="${r.taak||''}" placeholder="Taak/klus" onchange="updateSimpleField('${r.id}','taak',this.value)"></td>
+      <td><input type="text" value="${r.opmerking||''}" placeholder="Opmerking" onchange="updateSimpleField('${r.id}','opmerking',this.value)"></td>
+      <td><button class="btn" style="padding:5px 8px" onclick="deleteRij('${r.id}')"><i class="ti ti-trash"></i></button></td>
+    </tr>`;
+  });
+
+  html+=`</tbody><tfoot><tr><td colspan="3">Totaal${filterMwId?' (gefilterd)':''}</td><td>${totaal.toFixed(1)}</td><td colspan="3"></td></tr></tfoot></table>`;
+  document.getElementById('dag-content').innerHTML=html;
+}
+
+async function updateSimpleField(id,field,val){
+  const row=dagRows.find(r=>r.id===id);if(!row)return;
+  row[field]=val;
+  if(field==='uren')renderDagTable();
+  try{await sbPatch('mw_uren',id,{[field]:val});toast('Opgeslagen');}
+  catch(e){toast('Opslaan mislukt','err');}
+}
+
+async function addDagRij(){
+  const key=dateKey(currentDate);
+  try{
+    const res=await sbPost('mw_uren',{datum:key,medewerker_namen:[],medewerker_ids:[],type:'installateur',uren:8,taak:'',opmerking:''});
+    const newRow=res[0];newRow.medewerker_ids=[];newRow.medewerker_namen=[];
+    dagRows.push(newRow);renderDagTable();toast('Rij toegevoegd');
+  }catch(e){toast('Fout bij toevoegen','err');}
+}
+
+async function deleteRij(id){
+  try{await sbDelete('mw_uren',id);dagRows=dagRows.filter(r=>r.id!==id);renderDagTable();toast('Verwijderd');}
+  catch(e){toast('Verwijderen mislukt','err');}
+}
+
+function changeDay(d){currentDate=new Date(currentDate.getTime()+d*86400000);renderDag();}
+function goToday(){currentDate=new Date();renderDag();}
+
+function getWeekStart(offset){
+  const now=new Date();const day=now.getDay()===0?6:now.getDay()-1;
+  return new Date(now.getTime()-day*86400000+offset*7*86400000);
+}
+
+async function renderWeek(){
+  const mon=getWeekStart(weekOffset);const sun=new Date(mon.getTime()+6*86400000);
+  const wknr=getWeekNr(mon);
+  document.getElementById('week-label').textContent=`Week ${wknr} — ${mon.getDate()} ${MAANDEN[mon.getMonth()].slice(0,3)} – ${sun.getDate()} ${MAANDEN[sun.getMonth()].slice(0,3)} ${sun.getFullYear()}`;
+  document.getElementById('week-content').innerHTML='<div class="loading">Laden...</div>';
+  let rows=[];
+  try{rows=await sbGet('mw_uren',`select=*&datum=gte.${dateKey(mon)}&datum=lte.${dateKey(sun)}&order=datum,created_at`);}catch(e){}
+  const filt=filterRows(rows);
+  const totaal=filt.reduce((s,r)=>s+(parseFloat(r.uren)||0),0);
+  const inst=filt.filter(r=>r.type==='installateur').reduce((s,r)=>s+(parseFloat(r.uren)||0),0);
+  const kant=filt.filter(r=>r.type==='kantoor').reduce((s,r)=>s+(parseFloat(r.uren)||0),0);
+  const beide=filt.filter(r=>r.type==='beide').reduce((s,r)=>s+(parseFloat(r.uren)||0),0);
+  let html=`<div class="stat-grid">
+    <div class="stat"><div class="stat-label">Week ${wknr}</div><div class="stat-value">${totaal.toFixed(1)}</div><div class="stat-sub">uren totaal</div></div>
+    <div class="stat"><div class="stat-label">Installateurs</div><div class="stat-value">${inst.toFixed(1)}</div></div>
+    <div class="stat"><div class="stat-label">Kantoor</div><div class="stat-value">${kant.toFixed(1)}</div></div>
+    <div class="stat"><div class="stat-label">Beide</div><div class="stat-value">${beide.toFixed(1)}</div></div>
+  </div>`;
+  html+=buildTotalsBar(filt);
+  html+=`<table><thead><tr><th style="width:13%">Datum</th><th style="width:28%">Medewerker(s)</th><th style="width:13%">Type</th><th style="width:9%">Uren</th><th>Taak</th></tr></thead><tbody>`;
+  if(!filt.length)html+=`<tr><td colspan="5" class="empty">Geen registraties</td></tr>`;
+  let lastDag='';
+  filt.forEach(r=>{
+    const d=new Date(r.datum+'T00:00:00');
+    if(r.datum!==lastDag){html+=`<tr class="sep-week-header"><td colspan="5" class="sep-header">${DAGEN[d.getDay()].toUpperCase()} ${d.getDate()} ${MAANDEN[d.getMonth()]}</td></tr>`;lastDag=r.datum;}
+    html+=`<tr><td></td><td>${formatNamen(r)}</td><td><span class="badge ${badgeClass(r.type)}">${r.type||'-'}</span></td><td>${parseFloat(r.uren||0).toFixed(1)}</td><td>${r.taak||'-'}</td></tr>`;
+  });
+  html+=`</tbody><tfoot><tr><td colspan="3">Totaal week ${wknr}${filterMwId?' (gefilterd)':''}</td><td>${totaal.toFixed(1)}</td><td></td></tr></tfoot></table>`;
+  document.getElementById('week-content').innerHTML=html;
+}
+function changeWeek(d){weekOffset+=d;renderWeek();}
+
+async function renderMaand(){
+  const now=new Date();const ref=new Date(now.getFullYear(),now.getMonth()+monthOffset,1);
+  const y=ref.getFullYear(),m=ref.getMonth();
+  document.getElementById('maand-label').textContent=MAANDEN[m].charAt(0).toUpperCase()+MAANDEN[m].slice(1)+' '+y;
+  document.getElementById('maand-content').innerHTML='<div class="loading">Laden...</div>';
+  const days=new Date(y,m+1,0).getDate();
+  const from=`${y}-${String(m+1).padStart(2,'0')}-01`;
+  const to=`${y}-${String(m+1).padStart(2,'0')}-${days}`;
+  let rows=[];
+  try{rows=await sbGet('mw_uren',`select=*&datum=gte.${from}&datum=lte.${to}&order=datum,created_at`);}catch(e){}
+  const filt=filterRows(rows);
+  const totaal=filt.reduce((s,r)=>s+(parseFloat(r.uren)||0),0);
+  const dagCount=new Set(filt.map(r=>r.datum)).size;
+  let html=`<div class="stat-grid">
+    <div class="stat"><div class="stat-label">Totaal uren</div><div class="stat-value">${totaal.toFixed(1)}</div></div>
+    <div class="stat"><div class="stat-label">Actieve dagen</div><div class="stat-value">${dagCount}</div></div>
+    <div class="stat"><div class="stat-label">Registraties</div><div class="stat-value">${filt.length}</div></div>
+  </div>`;
+  html+=buildTotalsBar(filt);
+  html+=`<table><thead><tr><th style="width:14%">Datum</th><th style="width:30%">Medewerker(s)</th><th style="width:12%">Type</th><th style="width:9%">Uren</th><th>Taak</th></tr></thead><tbody>`;
+  if(!filt.length)html+=`<tr><td colspan="5" class="empty">Geen registraties</td></tr>`;
+  let lastWeek='';
+  filt.forEach(r=>{
+    const d=new Date(r.datum+'T00:00:00');
+    const wk=getWeekKey(d);const wknr=getWeekNr(d);
+    if(wk!==lastWeek){
+      const wkTotaal=filt.filter(rr=>getWeekKey(new Date(rr.datum+'T00:00:00'))===wk).reduce((s,rr)=>s+(parseFloat(rr.uren)||0),0);
+      const wkMon=new Date(wk+'T00:00:00');const wkSun=new Date(wkMon.getTime()+6*86400000);
+      html+=`<tr class="sep-week"><td colspan="4" class="sep-header">Week ${wknr} — ${wkMon.getDate()} ${MAANDEN[wkMon.getMonth()].slice(0,3)} – ${wkSun.getDate()} ${MAANDEN[wkSun.getMonth()].slice(0,3)} <span style="font-weight:400;color:#aaa">${wkTotaal.toFixed(1)} uur</span></td><td></td></tr>`;
+      lastWeek=wk;
+    }
+    html+=`<tr><td>${DAGEN[d.getDay()]} ${d.getDate()}/${d.getMonth()+1}</td><td>${formatNamen(r)}</td><td><span class="badge ${badgeClass(r.type)}">${r.type||'-'}</span></td><td>${parseFloat(r.uren||0).toFixed(1)}</td><td>${r.taak||'-'}</td></tr>`;
+  });
+  html+=`</tbody><tfoot><tr><td colspan="3">Totaal ${MAANDEN[m]}${filterMwId?' (gefilterd)':''}</td><td>${totaal.toFixed(1)}</td><td></td></tr></tfoot></table>`;
+  document.getElementById('maand-content').innerHTML=html;
+}
+function changeMonth(d){monthOffset+=d;renderMaand();}
+
+async function renderJaar(){
+  const y=new Date().getFullYear()+yearOffset;
+  document.getElementById('jaar-label').textContent=y;
+  document.getElementById('jaar-content').innerHTML='<div class="loading">Laden...</div>';
+  let rows=[];
+  try{rows=await sbGet('mw_uren',`select=*&datum=gte.${y}-01-01&datum=lte.${y}-12-31`);}catch(e){}
+  const filt=filterRows(rows);
+  const byM=Array.from({length:12},(_,i)=>({label:MAANDEN[i],uren:0,inst:0,kant:0,beide:0}));
+  filt.forEach(r=>{const mi=new Date(r.datum+'T00:00:00').getMonth();const u=parseFloat(r.uren)||0;byM[mi].uren+=u;if(r.type==='installateur')byM[mi].inst+=u;else if(r.type==='kantoor')byM[mi].kant+=u;else byM[mi].beide+=u;});
+  const totaal=byM.reduce((s,m)=>s+m.uren,0);
+  const byQ=[0,1,2,3].map(q=>({q:q+1,uren:byM.slice(q*3,q*3+3).reduce((s,m)=>s+m.uren,0)}));
+  let html=`<div class="stat-grid"><div class="stat"><div class="stat-label">Totaal ${y}${filterMwId?' (gefilterd)':''}</div><div class="stat-value">${totaal.toFixed(1)}</div><div class="stat-sub">uren</div></div>${byQ.map(q=>`<div class="stat"><div class="stat-label">Q${q.q}</div><div class="stat-value">${q.uren.toFixed(1)}</div></div>`).join('')}</div>`;
+  html+=buildTotalsBar(filt);
+  html+=`<table><thead><tr><th>Periode</th><th style="width:18%">Totaal</th><th style="width:18%">Installateurs</th><th style="width:18%">Kantoor</th><th style="width:18%">Beide</th></tr></thead><tbody>`;
+  let lastQ=0;
+  byM.forEach((m,i)=>{
+    const q=getKwartaal(i);
+    if(q!==lastQ){
+      const qU=byM.slice((q-1)*3,q*3).reduce((s,mm)=>s+mm.uren,0);
+      html+=`<tr class="sep-kwartaal"><td colspan="4" class="sep-header">Kwartaal ${q} — ${MAANDEN[(q-1)*3].slice(0,3)}–${MAANDEN[q*3-1].slice(0,3)} <span style="font-weight:400;color:#888">${qU.toFixed(1)} uur</span></td><td></td></tr>`;
+      lastQ=q;
+    }
+    html+=`<tr><td>${m.label.charAt(0).toUpperCase()+m.label.slice(1)}</td><td>${m.uren.toFixed(1)}</td><td>${m.inst.toFixed(1)}</td><td>${m.kant.toFixed(1)}</td><td>${m.beide.toFixed(1)}</td></tr>`;
+  });
+  html+=`</tbody><tfoot><tr><td>Totaal ${y}</td><td>${totaal.toFixed(1)}</td><td></td><td></td><td></td></tr></tfoot></table>`;
+  document.getElementById('jaar-content').innerHTML=html;
+}
+function changeYear(d){yearOffset+=d;renderJaar();}
+
+// ===== PLANNING =====
+function getPlanningWeekStart(){
+  const now=new Date();const day=now.getDay()===0?6:now.getDay()-1;
+  return new Date(now.getTime()-day*86400000+planningWeekOffset*7*86400000);
+}
+
+async function renderPlanning(){
+  const mon=getPlanningWeekStart();
+  const sun=new Date(mon.getTime()+6*86400000);
+  const wknr=getWeekNr(mon);
+  document.getElementById('planning-label').textContent=`Week ${wknr} — ${mon.getDate()} ${MAANDEN[mon.getMonth()].slice(0,3)} – ${sun.getDate()} ${MAANDEN[sun.getMonth()].slice(0,3)} ${mon.getFullYear()}`;
+  document.getElementById('planning-content').innerHTML='<div class="loading">Laden...</div>';
+  let items=[];
+  try{items=await sbGet('mw_planning',`select=*&datum_van=lte.${dateKey(sun)}&datum_tot=gte.${dateKey(mon)}&order=datum_van`);}catch(e){}
+  const todayKey=dateKey(new Date());
+  const days=Array.from({length:7},(_,i)=>new Date(mon.getTime()+i*86400000));
+
+  let html=`<div style="overflow-x:auto"><div style="min-width:700px">`;
+  // Header
+  html+=`<div class="planning-header"><div class="planning-header-name">Medewerker</div>`;
+  days.forEach(d=>{
+    const isWe=d.getDay()===0||d.getDay()===6;
+    const isToday=dateKey(d)===todayKey;
+    html+=`<div class="planning-header-day${isWe?' weekend':''}${isToday?' today':''}">${DAGEN[d.getDay()]}<br>${d.getDate()}</div>`;
+  });
+  html+=`</div>`;
+
+  // Rows per medewerker
+  medewerkers.forEach(mw=>{
+    html+=`<div class="planning-row">`;
+    html+=`<div class="planning-name">${mw.naam}</div>`;
+    days.forEach(d=>{
+      const dk=dateKey(d);
+      const isWe=d.getDay()===0||d.getDay()===6;
+      const isToday=dk===todayKey;
+      const item=items.find(it=>it.medewerker_id===mw.id&&it.datum_van<=dk&&it.datum_tot>=dk);
+      html+=`<div class="planning-cell${isWe?' weekend':''}${isToday?' today':''}" onclick="openPlanningModal('${dk}','${mw.id}',${item?`'${item.id}'`:'null'})">`;
+      if(item){html+=`<div class="planning-block block-${item.type}" title="${item.omschrijving||item.type}">${item.type==='werk'?'✓':item.type.slice(0,1).toUpperCase()}</div>`;}
+      html+=`</div>`;
+    });
+    html+=`</div>`;
+  });
+  html+=`</div></div>`;
+  document.getElementById('planning-content').innerHTML=html;
+}
+
+function changePlanningWeek(d){planningWeekOffset+=d;renderPlanning();}
+function goTodayPlanning(){planningWeekOffset=0;renderPlanning();}
+
+function openPlanningModal(datum,mwId,itemId){
+  editingPlanningId=itemId||null;
+  const modal=document.getElementById('planning-modal');
+  document.getElementById('modal-title').textContent=itemId?'Item bewerken':'Inplannen';
+  document.getElementById('modal-delete-btn').style.display=itemId?'':'none';
+  // Fill medewerker select
+  const mwSel=document.getElementById('modal-mw');
+  mwSel.innerHTML=medewerkers.map(m=>`<option value="${m.id}" ${m.id===mwId?'selected':''}>${m.naam}</option>`).join('');
+  if(datum){document.getElementById('modal-van').value=datum;document.getElementById('modal-tot').value=datum;}
+  if(itemId){
+    // Load existing item
+    sbGet('mw_planning',`select=*&id=eq.${itemId}`).then(r=>{
+      if(r[0]){
+        document.getElementById('modal-type').value=r[0].type;
+        document.getElementById('modal-van').value=r[0].datum_van;
+        document.getElementById('modal-tot').value=r[0].datum_tot;
+        document.getElementById('modal-omschrijving').value=r[0].omschrijving||'';
+        mwSel.value=r[0].medewerker_id;
+      }
+    });
+  } else {
+    document.getElementById('modal-type').value='werk';
+    document.getElementById('modal-omschrijving').value='';
+  }
+  modal.style.display='flex';
+}
+
+function closePlanningModal(e){
+  if(!e||e.target===document.getElementById('planning-modal'))
+    document.getElementById('planning-modal').style.display='none';
+}
+
+async function savePlanningItem(){
+  const mwId=document.getElementById('modal-mw').value;
+  const mw=medewerkers.find(m=>m.id===mwId);
+  const body={
+    medewerker_id:mwId,
+    medewerker_naam:mw?.naam||'',
+    type:document.getElementById('modal-type').value,
+    datum_van:document.getElementById('modal-van').value,
+    datum_tot:document.getElementById('modal-tot').value,
+    omschrijving:document.getElementById('modal-omschrijving').value
+  };
+  try{
+    if(editingPlanningId)await sbPatch('mw_planning',editingPlanningId,body);
+    else await sbPost('mw_planning',body);
+    toast('Opgeslagen');
+    document.getElementById('planning-modal').style.display='none';
+    renderPlanning();
+  }catch(e){toast('Opslaan mislukt','err');}
+}
+
+async function deletePlanningItem(){
+  if(!editingPlanningId||!confirm('Verwijderen?'))return;
+  try{await sbDelete('mw_planning',editingPlanningId);toast('Verwijderd');document.getElementById('planning-modal').style.display='none';renderPlanning();}
+  catch(e){toast('Verwijderen mislukt','err');}
+}
+
+// ===== DASHBOARD =====
+function getDashRange(){
+  const now=new Date();let from,to=dateKey(now);
+  if(dashPeriod==='week'){const day=now.getDay()===0?6:now.getDay()-1;from=dateKey(new Date(now.getTime()-day*86400000));}
+  else if(dashPeriod==='maand'){from=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`;}
+  else if(dashPeriod==='kwartaal'){const q=Math.floor(now.getMonth()/3);from=`${now.getFullYear()}-${String(q*3+1).padStart(2,'0')}-01`;}
+  else{from=`${now.getFullYear()}-01-01`;}
+  return{from,to};
+}
+function destroyChart(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
+async function renderDashboard(){
+  const{from,to}=getDashRange();
+  document.getElementById('dash-stats').innerHTML='<div class="loading">Laden...</div>';
+  let rows=[];
+  try{rows=await sbGet('mw_uren',`select=*&datum=gte.${from}&datum=lte.${to}&order=datum`);}catch(e){}
+  const filt=filterRows(rows);
+  const totaal=filt.reduce((s,r)=>s+(parseFloat(r.uren)||0),0);
+  const inst=filt.filter(r=>r.type==='installateur').reduce((s,r)=>s+(parseFloat(r.uren)||0),0);
+  const kant=filt.filter(r=>r.type==='kantoor').reduce((s,r)=>s+(parseFloat(r.uren)||0),0);
+  const beide=filt.filter(r=>r.type==='beide').reduce((s,r)=>s+(parseFloat(r.uren)||0),0);
+  const dagCount=new Set(filt.map(r=>r.datum)).size;
+  document.getElementById('dash-stats').innerHTML=`
+    <div class="stat"><div class="stat-label">Totaal uren</div><div class="stat-value">${totaal.toFixed(1)}</div></div>
+    <div class="stat"><div class="stat-label">Installateurs</div><div class="stat-value">${inst.toFixed(1)}</div></div>
+    <div class="stat"><div class="stat-label">Kantoor</div><div class="stat-value">${kant.toFixed(1)}</div></div>
+    <div class="stat"><div class="stat-label">Beide</div><div class="stat-value">${beide.toFixed(1)}</div></div>
+    <div class="stat"><div class="stat-label">Actieve dagen</div><div class="stat-value">${dagCount}</div></div>`;
+  const byDag={};filt.forEach(r=>{if(!byDag[r.datum])byDag[r.datum]=0;byDag[r.datum]+=parseFloat(r.uren)||0;});
+  const dagLabels=Object.keys(byDag).sort();
+  destroyChart('dag');
+  charts['dag']=new Chart(document.getElementById('chart-dag').getContext('2d'),{type:'bar',data:{labels:dagLabels.map(d=>{const dt=new Date(d+'T00:00:00');return DAGEN[dt.getDay()]+' '+dt.getDate()+'/'+(dt.getMonth()+1);}),datasets:[{label:'Uren',data:dagLabels.map(k=>byDag[k]),backgroundColor:'#1a1a1a',borderRadius:4}]},options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}});
+  const byMw={};filt.forEach(r=>{const namen=r.medewerker_namen&&r.medewerker_namen.length?r.medewerker_namen:[r.medewerker_naam||'Onbekend'];namen.forEach(n=>{if(!byMw[n])byMw[n]=0;byMw[n]+=parseFloat(r.uren)||0;});});
+  const mwLabels=Object.keys(byMw);const colors=['#1a1a1a','#4a4a4a','#7a7a7a','#aaa','#ccc','#e5e5e0'];
+  destroyChart('mw');
+  charts['mw']=new Chart(document.getElementById('chart-mw').getContext('2d'),{type:'doughnut',data:{labels:mwLabels,datasets:[{data:mwLabels.map(k=>byMw[k]),backgroundColor:colors.slice(0,mwLabels.length),borderWidth:2,borderColor:'#fff'}]},options:{plugins:{legend:{position:'right',labels:{font:{size:12}}}}}});
+  destroyChart('type');
+  charts['type']=new Chart(document.getElementById('chart-type').getContext('2d'),{type:'pie',data:{labels:['Installateur','Kantoor','Beide'],datasets:[{data:[inst,kant,beide],backgroundColor:['#1e40af','#166534','#92400e'],borderWidth:2,borderColor:'#fff'}]},options:{plugins:{legend:{position:'right',labels:{font:{size:12}}}}}});
+  const byWeek={};filt.forEach(r=>{const wk=getWeekKey(new Date(r.datum+'T00:00:00'));if(!byWeek[wk])byWeek[wk]=0;byWeek[wk]+=parseFloat(r.uren)||0;});
+  const wkKeys=Object.keys(byWeek).sort();
+  destroyChart('week');
+  charts['week']=new Chart(document.getElementById('chart-week').getContext('2d'),{type:'line',data:{labels:wkKeys.map(d=>{const dt=new Date(d+'T00:00:00');return dt.getDate()+'/'+(dt.getMonth()+1);}),datasets:[{label:'Uren',data:wkKeys.map(k=>byWeek[k]),borderColor:'#1a1a1a',backgroundColor:'rgba(26,26,26,0.08)',fill:true,tension:0.3,pointRadius:4}]},options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}});
+}
+function setDashPeriod(p,btn){dashPeriod=p;document.querySelectorAll('#dash-period-btns button').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderDashboard();}
+
+// ===== REKENTOOL =====
+function setRekenPeriod(p,btn){rekenPeriod=p;rekenOffset=0;document.querySelectorAll('#reken-period-btns button').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderRekentool();}
+function changeRekenPeriod(d){rekenOffset+=d;renderRekentool();}
+
+function getRekenRange(){
+  const now=new Date();let from,to,label;
+  if(rekenPeriod==='week'){
+    const day=now.getDay()===0?6:now.getDay()-1;
+    const mon=new Date(now.getTime()-day*86400000+rekenOffset*7*86400000);
+    const sun=new Date(mon.getTime()+6*86400000);
+    from=dateKey(mon);to=dateKey(sun);
+    label=`Week ${getWeekNr(mon)} — ${mon.getDate()} ${MAANDEN[mon.getMonth()].slice(0,3)} – ${sun.getDate()} ${MAANDEN[sun.getMonth()].slice(0,3)} ${sun.getFullYear()}`;
+  }else if(rekenPeriod==='maand'){
+    const ref=new Date(now.getFullYear(),now.getMonth()+rekenOffset,1);
+    const y=ref.getFullYear(),m=ref.getMonth();
+    from=`${y}-${String(m+1).padStart(2,'0')}-01`;to=`${y}-${String(m+1).padStart(2,'0')}-${new Date(y,m+1,0).getDate()}`;
+    label=MAANDEN[m].charAt(0).toUpperCase()+MAANDEN[m].slice(1)+' '+y;
+  }else if(rekenPeriod==='kwartaal'){
+    const totalQ=Math.floor(now.getFullYear()*4+Math.floor(now.getMonth()/3))+rekenOffset;
+    const qYear=Math.floor(totalQ/4);const qNum=((totalQ%4)+4)%4;
+    from=`${qYear}-${String(qNum*3+1).padStart(2,'0')}-01`;
+    const endM=qNum*3+2;to=`${qYear}-${String(endM+1).padStart(2,'0')}-${new Date(qYear,endM+1,0).getDate()}`;
+    label=`Q${qNum+1} ${qYear}`;
+  }else{
+    const y=now.getFullYear()+rekenOffset;from=`${y}-01-01`;to=`${y}-12-31`;label=`${y}`;
+  }
+  return{from,to,label};
+}
+
+async function renderRekentool(){
+  const{from,to,label}=getRekenRange();
+  document.getElementById('reken-label').textContent=label;
+  document.getElementById('reken-content').innerHTML='<div class="loading">Laden...</div>';
+  let rows=[];
+  try{rows=await sbGet('mw_uren',`select=*&datum=gte.${from}&datum=lte.${to}&order=datum`);}catch(e){}
+  // Build per medewerker from mw_medewerkers (all active) with hours from rows
+  const byMw={};
+  medewerkers.forEach(mw=>{byMw[mw.id]={...mw,uren:0,dagen:new Set()};});
+  rows.forEach(r=>{
+    const ids=r.medewerker_ids&&r.medewerker_ids.length?r.medewerker_ids:[r.medewerker_id].filter(Boolean);
+    ids.forEach(id=>{if(byMw[id]){byMw[id].uren+=parseFloat(r.uren)||0;if(r.datum)byMw[id].dagen.add(r.datum);}});
+  });
+  let totBruto=0,totNetto=0,totUren=0;
+  const mwList=Object.values(byMw).filter(m=>m.uren>0||true);
+
+  let html=`<div class="reken-totaal-bar" id="reken-totaal-bar">
+    <div style="font-weight:500;font-size:13px;margin-right:8px">${label}</div>
+    <div class="item"><div class="label">Totaal uren</div><div class="value" id="rtot-uren">0</div></div>
+    <div class="item"><div class="label">Totaal bruto</div><div class="value" id="rtot-bruto">€0.00</div></div>
+    <div class="item"><div class="label">Totaal netto</div><div class="value" id="rtot-netto">€0.00</div></div>
+  </div>`;
+
+  if(!mwList.length){html+='<div class="card"><div class="empty">Geen medewerkers</div></div>';document.getElementById('reken-content').innerHTML=html;return;}
+
+  mwList.forEach(mw=>{
+    const d={
+      tarief:mw.beloningsvorm||'uur',
+      uurtarief:mw.uurtarief||25,
+      maandsalaris:mw.maandsalaris||0,
+      type:mw.uitkering_type||'loon',
+      loonheffing:mw.loonheffing||37.10,
+      dividendtax:mw.dividendtax||15
+    };
+    html+=`<div class="reken-card">
+      <div class="reken-header">
+        <div class="reken-naam">${mw.naam}</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="badge ${d.type==='loon'?'badge-kant':'badge-beide'}" id="rbadge-${mw.id}">${d.type}</span>
+          <span style="font-size:12px;color:#999">${mw.uren.toFixed(1)} uren | ${mw.dagen.size} dagen</span>
+        </div>
+      </div>
+      <div class="reken-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div>
+            <div class="reken-row"><label>Beloningsvorm</label>
+              <select onchange="updateRekenTarief('${mw.id}','tarief',this.value,${mw.uren})">
+                <option value="uur" ${d.tarief==='uur'?'selected':''}>Uurtarief</option>
+                <option value="vast" ${d.tarief==='vast'?'selected':''}>Vast bedrag</option>
+              </select>
+            </div>
+            <div class="reken-row" id="rtarief-row-${mw.id}">
+              <label id="rtarief-label-${mw.id}">${d.tarief==='uur'?'Uurtarief (€)':'Vast bedrag (€)'}</label>
+              <input type="number" min="0" step="0.5" value="${d.tarief==='uur'?d.uurtarief:d.maandsalaris}" id="rtarief-input-${mw.id}" onchange="updateRekenTarief('${mw.id}','${d.tarief==='uur'?'uurtarief':'maandsalaris'}',parseFloat(this.value)||0,${mw.uren})">
+            </div>
+          </div>
+          <div>
+            <div class="reken-row"><label>Type uitkering</label>
+              <select onchange="updateRekenTarief('${mw.id}','uitkering_type',this.value,${mw.uren})">
+                <option value="loon" ${d.type==='loon'?'selected':''}>Loon</option>
+                <option value="dividend" ${d.type==='dividend'?'selected':''}>Dividend</option>
+              </select>
+            </div>
+            <div class="reken-row"><label id="rbel-label-${mw.id}">${d.type==='loon'?'Loonheffing %':'Dividendbelasting %'}</label>
+              <input type="number" min="0" max="100" step="0.1" value="${d.type==='loon'?d.loonheffing:d.dividendtax}" id="rbel-input-${mw.id}" onchange="updateRekenTarief('${mw.id}','${d.type==='loon'?'loonheffing':'dividendtax'}',parseFloat(this.value)||0,${mw.uren})">
+            </div>
+          </div>
+        </div>
+        <div class="reken-result" id="rresult-${mw.id}"></div>
+      </div>
+    </div>`;
+  });
+
+  document.getElementById('reken-content').innerHTML=html;
+  mwList.forEach(mw=>calcRekenResult(mw.id,mw.uren));
+}
+
+function calcRekenResult(mwId,uren){
+  const mw=medewerkers.find(m=>m.id===mwId);if(!mw)return;
+  const d={tarief:mw.beloningsvorm||'uur',uurtarief:mw.uurtarief||25,maandsalaris:mw.maandsalaris||0,type:mw.uitkering_type||'loon',loonheffing:mw.loonheffing||37.10,dividendtax:mw.dividendtax||15};
+  let bruto=d.tarief==='uur'?uren*(parseFloat(d.uurtarief)||0):parseFloat(d.maandsalaris)||0;
+  const taxPct=parseFloat(d.type==='loon'?d.loonheffing:d.dividendtax)||0;
+  const belasting=bruto*taxPct/100;const netto=bruto-belasting;
+  const el=document.getElementById('rresult-'+mwId);
+  if(el)el.innerHTML=`
+    <div class="reken-result-item"><div class="label">Bruto</div><div class="value">€${bruto.toFixed(2)}</div></div>
+    <div class="reken-result-item"><div class="label">${d.type==='loon'?'Loonheffing':'Dividendbelasting'}</div><div class="value">€${belasting.toFixed(2)}</div></div>
+    <div class="reken-result-item"><div class="label">Netto uitkering</div><div class="value highlight">€${netto.toFixed(2)}</div></div>`;
+  updateRekenTotaalBar();
+}
+
+function updateRekenTotaalBar(){
+  let totU=0,totB=0,totN=0;
+  medewerkers.forEach(mw=>{
+    const el=document.getElementById('rresult-'+mw.id);if(!el)return;
+    const vals=el.querySelectorAll('.value');if(vals.length<3)return;
+    const bruto=parseFloat(vals[0].textContent.replace('€',''))||0;
+    const bel=parseFloat(vals[1].textContent.replace('€',''))||0;
+    const netto=parseFloat(vals[2].textContent.replace('€',''))||0;
+    // get uren from header
+    const header=document.querySelector(`#rresult-${mw.id}`)?.closest('.reken-card')?.querySelector('.reken-header span:last-child');
+    if(header){const m=header.textContent.match(/([0-9.]+) uren/);if(m)totU+=parseFloat(m[1])||0;}
+    totB+=bruto;totN+=netto;
+  });
+  const u=document.getElementById('rtot-uren');const b=document.getElementById('rtot-bruto');const n=document.getElementById('rtot-netto');
+  if(u)u.textContent=totU.toFixed(1);if(b)b.textContent='€'+totB.toFixed(2);if(n)n.textContent='€'+totN.toFixed(2);
+}
+
+async function updateRekenTarief(mwId,field,val,uren){
+  const mw=medewerkers.find(m=>m.id===mwId);if(!mw)return;
+  mw[field]=val;
+  // Update label if type changed
+  if(field==='uitkering_type'){
+    const lbl=document.getElementById('rbel-label-'+mwId);
+    const inp=document.getElementById('rbel-input-'+mwId);
+    const badge=document.getElementById('rbadge-'+mwId);
+    if(lbl)lbl.textContent=val==='loon'?'Loonheffing %':'Dividendbelasting %';
+    if(inp)inp.value=val==='loon'?(mw.loonheffing||37.10):(mw.dividendtax||15);
+    if(badge){badge.textContent=val;badge.className='badge '+(val==='loon'?'badge-kant':'badge-beide');}
+  }
+  if(field==='tarief'){
+    const lbl=document.getElementById('rtarief-label-'+mwId);
+    const inp=document.getElementById('rtarief-input-'+mwId);
+    if(lbl)lbl.textContent=val==='uur'?'Uurtarief (€)':'Vast bedrag (€)';
+    if(inp){inp.value=val==='uur'?(mw.uurtarief||25):(mw.maandsalaris||0);inp.onchange=e=>updateRekenTarief(mwId,val==='uur'?'uurtarief':'maandsalaris',parseFloat(e.target.value)||0,uren);}
+  }
+  calcRekenResult(mwId,uren);
+  // Save to Supabase
+  try{await sbPatch('mw_medewerkers',mwId,{[field]:val});}catch(e){}
+}
+
+function exportRekenCSV(){
+  const{label}=getRekenRange();
+  const rows=[['Medewerker','Uren','Dagen','Beloningsvorm','Bruto (EUR)','Belasting (EUR)','Netto (EUR)','Type']];
+  medewerkers.forEach(mw=>{
+    const el=document.getElementById('rresult-'+mw.id);if(!el)return;
+    const vals=el.querySelectorAll('.value');if(vals.length<3)return;
+    const header=document.querySelector(`#rresult-${mw.id}`)?.closest('.reken-card')?.querySelector('.reken-header span:last-child');
+    let uren=0,dagen=0;if(header){const m=header.textContent.match(/([0-9.]+) uren \| ([0-9]+)/);if(m){uren=m[1];dagen=m[2];}}
+    const bruto=vals[0].textContent.replace('€','');const bel=vals[1].textContent.replace('€','');const netto=vals[2].textContent.replace('€','');
+    const d={tarief:mw.beloningsvorm||'uur',uurtarief:mw.uurtarief||25,maandsalaris:mw.maandsalaris||0,type:mw.uitkering_type||'loon'};
+    rows.push([mw.naam,uren,dagen,d.tarief==='uur'?`€${d.uurtarief}/uur`:`€${d.maandsalaris} vast`,bruto,bel,netto,d.type]);
+  });
+  const csv=rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`uitbetaling_${rekenPeriod}.csv`;a.click();URL.revokeObjectURL(url);
+}
+
+function exportRekenPDF(){
+  const{label}=getRekenRange();
+  let rows=[];let totB=0,totN=0;
+  medewerkers.forEach(mw=>{
+    const el=document.getElementById('rresult-'+mw.id);if(!el)return;
+    const vals=el.querySelectorAll('.value');if(vals.length<3)return;
+    const header=document.querySelector(`#rresult-${mw.id}`)?.closest('.reken-card')?.querySelector('.reken-header span:last-child');
+    let uren='0',dagen='0';if(header){const m=header.textContent.match(/([0-9.]+) uren \| ([0-9]+)/);if(m){uren=m[1];dagen=m[2];}}
+    const bruto=parseFloat(vals[0].textContent.replace('€',''))||0;
+    const bel=parseFloat(vals[1].textContent.replace('€',''))||0;
+    const netto=parseFloat(vals[2].textContent.replace('€',''))||0;
+    totB+=bruto;totN+=netto;
+    rows.push({naam:mw.naam,uren,dagen,bruto:bruto.toFixed(2),bel:bel.toFixed(2),netto:netto.toFixed(2),type:mw.uitkering_type||'loon'});
+  });
+  const w=window.open('','_blank');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Uitbetaling ${label}</title>
+  <style>body{font-family:Arial,sans-serif;padding:30px;color:#1a1a1a}h1{font-size:18px;margin-bottom:4px}h2{font-size:13px;color:#888;font-weight:400;margin-bottom:24px}table{width:100%;border-collapse:collapse;font-size:13px}th{text-align:left;padding:8px 10px;background:#f0f0f0;border-bottom:2px solid #ccc;font-size:12px}td{padding:8px 10px;border-bottom:1px solid #eee}.total{font-weight:bold;background:#f8f8f6}.highlight{color:#166534;font-weight:500}@media print{button{display:none}}</style>
+  </head><body><h1>Uitbetaling — ${label}</h1><h2>Thuisaccu Winkel</h2>
+  <table><thead><tr><th>Medewerker</th><th>Uren</th><th>Dagen</th><th>Bruto</th><th>Belasting</th><th>Netto</th><th>Type</th></tr></thead><tbody>
+  ${rows.map(r=>`<tr><td>${r.naam}</td><td>${r.uren}</td><td>${r.dagen}</td><td>€${r.bruto}</td><td>€${r.bel}</td><td class="highlight">€${r.netto}</td><td>${r.type}</td></tr>`).join('')}
+  <tr class="total"><td colspan="3">Totaal</td><td>€${totB.toFixed(2)}</td><td></td><td class="highlight">€${totN.toFixed(2)}</td><td></td></tr>
+  </tbody></table><p style="margin-top:20px;font-size:11px;color:#aaa">Gegenereerd op ${new Date().toLocaleDateString('nl-NL')}</p>
+  <br><button onclick="window.print()" style="padding:8px 16px;cursor:pointer">Afdrukken / Opslaan als PDF</button></body></html>`);
+  w.document.close();
+}
+
+// ===== MEDEWERKERS =====
+async function renderMedewerkers(){
+  document.getElementById('mw-content').innerHTML='<div class="loading">Laden...</div>';
+  await loadMedewerkers();
+  let html=`<table><thead><tr>
+    <th style="width:18%">Naam</th>
+    <th style="width:10%">Type</th>
+    <th style="width:10%">Beloning</th>
+    <th style="width:12%">Tarief</th>
+    <th style="width:10%">Uitkering</th>
+    <th style="width:12%">Belasting %</th>
+    <th style="width:8%"></th>
+  </tr></thead><tbody>`;
+  if(!medewerkers.length)html+=`<tr><td colspan="7" class="empty">Nog geen medewerkers</td></tr>`;
+  medewerkers.forEach(m=>{
+    const tarief=m.beloningsvorm==='vast'?`€${m.maandsalaris||0} vast`:`€${m.uurtarief||25}/uur`;
+    const bel=m.uitkering_type==='dividend'?`${m.dividendtax||15}%`:`${m.loonheffing||37.10}%`;
+    html+=`<tr>
+      <td>${m.naam}</td>
+      <td><span class="badge ${badgeClass(m.type)}">${m.type}</span></td>
+      <td>${m.beloningsvorm||'uur'}</td>
+      <td>${tarief}</td>
+      <td>${m.uitkering_type||'loon'}</td>
+      <td>${bel}</td>
+      <td><button class="btn" style="padding:5px 8px" onclick="editMedewerker('${m.id}')"><i class="ti ti-pencil"></i></button>
+      <button class="btn btn-danger" style="padding:5px 8px;margin-left:4px" onclick="removeMedewerker('${m.id}')"><i class="ti ti-trash"></i></button></td>
+    </tr>`;
+  });
+  html+=`</tbody></table>`;
+  document.getElementById('mw-content').innerHTML=html;
+}
+
+async function addMedewerker(){
+  const naam=prompt('Naam medewerker:');if(!naam||!naam.trim())return;
+  const typeKeuze=prompt('Type (installateur / kantoor / beide):','installateur');
+  const type=['installateur','kantoor','beide'].includes(typeKeuze)?typeKeuze:'installateur';
+  const beloning=prompt('Beloningsvorm (uur / vast):','uur');
+  const beloningsvorm=['uur','vast'].includes(beloning)?beloning:'uur';
+  const tarief=beloningsvorm==='uur'?parseFloat(prompt('Uurtarief (€):','25'))||25:parseFloat(prompt('Vast bedrag per periode (€):','0'))||0;
+  const uitkering=prompt('Type uitkering (loon / dividend):','loon');
+  const uitkering_type=['loon','dividend'].includes(uitkering)?uitkering:'loon';
+  const belasting=uitkering_type==='loon'?parseFloat(prompt('Loonheffing %:','37.10'))||37.10:parseFloat(prompt('Dividendbelasting %:','15'))||15;
+  const body={naam:naam.trim(),type,actief:true,beloningsvorm,uurtarief:beloningsvorm==='uur'?tarief:25,maandsalaris:beloningsvorm==='vast'?tarief:0,uitkering_type,loonheffing:uitkering_type==='loon'?belasting:37.10,dividendtax:uitkering_type==='dividend'?belasting:15};
+  try{await sbPost('mw_medewerkers',body);toast('Medewerker toegevoegd');renderMedewerkers();}
+  catch(e){toast('Fout bij toevoegen','err');}
+}
+
+async function editMedewerker(id){
+  const mw=medewerkers.find(m=>m.id===id);if(!mw)return;
+  const uurtarief=parseFloat(prompt(`Uurtarief (€) voor ${mw.naam}:`,mw.uurtarief||25))||25;
+  const maandsalaris=parseFloat(prompt('Vast bedrag per periode (€):',mw.maandsalaris||0))||0;
+  const loonheffing=parseFloat(prompt('Loonheffing %:',mw.loonheffing||37.10))||37.10;
+  const dividendtax=parseFloat(prompt('Dividendbelasting %:',mw.dividendtax||15))||15;
+  const uitkering_type=prompt('Type uitkering (loon / dividend):',mw.uitkering_type||'loon');
+  try{await sbPatch('mw_medewerkers',id,{uurtarief,maandsalaris,loonheffing,dividendtax,uitkering_type:['loon','dividend'].includes(uitkering_type)?uitkering_type:'loon'});toast('Opgeslagen');renderMedewerkers();}
+  catch(e){toast('Opslaan mislukt','err');}
+}
+
+async function removeMedewerker(id){
+  if(!confirm('Medewerker verwijderen?'))return;
+  try{await sbPatch('mw_medewerkers',id,{actief:false});toast('Medewerker verwijderd');renderMedewerkers();}
+  catch(e){toast('Fout','err');}
+}
+
+// ===== EXPORT CSV =====
+async function exportCSV(view){
+  let rows=[],headers=['Datum','Medewerker(s)','Type','Uren','Taak','Opmerking'];
+  const now=new Date();
+  const fetch2=async(f,t)=>sbGet('mw_uren',`select=*&datum=gte.${f}&datum=lte.${t}&order=datum`);
+  if(view==='dag'){rows=filterRows(dagRows).map(r=>[r.datum,formatNamen(r),r.type,r.uren,r.taak,r.opmerking]);}
+  else if(view==='week'){const mon=getWeekStart(weekOffset);const sun=new Date(mon.getTime()+6*86400000);try{const d=await fetch2(dateKey(mon),dateKey(sun));rows=filterRows(d).map(r=>[r.datum,formatNamen(r),r.type,r.uren,r.taak,r.opmerking]);}catch(e){}}
+  else if(view==='maand'){const ref=new Date(now.getFullYear(),now.getMonth()+monthOffset,1);const y=ref.getFullYear(),m=ref.getMonth();const days=new Date(y,m+1,0).getDate();try{const d=await fetch2(`${y}-${String(m+1).padStart(2,'0')}-01`,`${y}-${String(m+1).padStart(2,'0')}-${days}`);rows=filterRows(d).map(r=>[r.datum,formatNamen(r),r.type,r.uren,r.taak,r.opmerking]);}catch(e){}}
+  else if(view==='jaar'){const y=now.getFullYear()+yearOffset;try{const d=await fetch2(`${y}-01-01`,`${y}-12-31`);rows=filterRows(d).map(r=>[r.datum,formatNamen(r),r.type,r.uren,r.taak,r.opmerking]);}catch(e){}}
+  const csv=[headers,...rows].map(r=>r.map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`uren_${view}.csv`;a.click();URL.revokeObjectURL(url);
+}
+
+// ===== SHOW VIEW =====
+function showView(v){
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(el=>el.classList.remove('active'));
+  document.getElementById('view-'+v).classList.add('active');
+  const map={dag:'Dag',week:'Week',maand:'Maand',jaar:'Jaar',planning:'Planning',dashboard:'Dashboard',rekentool:'Rekentool',medewerkers:'Medewerkers'};
+  document.querySelectorAll('.tab').forEach(el=>{if(el.textContent.trim().startsWith(map[v]))el.classList.add('active');});
+  if(v==='dag')renderDag();
+  if(v==='week')renderWeek();
+  if(v==='maand')renderMaand();
+  if(v==='jaar')renderJaar();
+  if(v==='planning')renderPlanning();
+  if(v==='dashboard')renderDashboard();
+  if(v==='rekentool')renderRekentool();
+  if(v==='medewerkers')renderMedewerkers();
+}
+
+async function init(){await loadMedewerkers();renderDag();}
+init();
+</script>
+</body>
+</html>
